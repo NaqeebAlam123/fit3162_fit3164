@@ -6,7 +6,7 @@ from pathlib import Path
 def extracting_facial_landmarks(path):
     p=Path(path)
     for path in p.iterdir():
-        print(path.name)
+        print('starting facial landmark extraction for ' + path.name)
         if path.name == 'neutral':
             storepath = r'D:\Project2\fit3162_fit3164\train\landmark\dataset_M030\landmark\M030_'+path.name+'_1_'
         else:
@@ -19,16 +19,17 @@ def extracting_facial_landmarks(path):
            #facial_landmark(str(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4'))))
            #D:\Project2\dataset\train\train\landmark\dataset_M030\video\angry
            #print(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4'))
-           #array=facial_landmark(str(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4')))
-           #print(storepath + str(str(i+1).rjust(3, '0')) + '\\' + '0.npy')
-            array=[]
+            array=facial_landmark(str(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4')))
+            #print(storepath + str(str(i+1).rjust(3, '0')) + '\\' + '0.npy')
+            #array=[]
             os.makedirs(storepath+ str(str(i+1).rjust(3, '0')),exist_ok=True)
             np.save(storepath + str(str(i+1).rjust(3, '0')) + '\\' + '0.npy', array)
            #print(i+1)
+        print('completed for ' + path.name)
         #print(np.array(facial_landmark_all).shape)
         #print((len(list(path.iterdir()))-4)//25)
         #print(facial_landmark_all.shape)
-        break
+        #break
     # # set the directory to add npy_video folder for later
     # os.chdir(os.path.abspath(os.path.join(path, os.pardir)))
     # #print(os.getcwd())
