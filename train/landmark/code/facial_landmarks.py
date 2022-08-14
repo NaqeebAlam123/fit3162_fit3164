@@ -65,7 +65,7 @@ def generate_landmarks_frame(image,face_detector,predictor):
 def facial_landmark(video_path):
     face_detector=dlib.get_frontal_face_detector()
     
-    predictor = dlib.shape_predictor(r"D:\Project1\fit3162_fit3164\shape_predictor_68_face_landmarks.dat")
+    predictor = dlib.shape_predictor(r"D:\Project2\fit3162_fit3164\shape_predictor_68_face_landmarks.dat")
     # Loading image
     # #image=cv2.imread(path)
     # # Resizing the image and converting to gray scale to exclude any other faces in image
@@ -75,5 +75,5 @@ def facial_landmark(video_path):
         video_landmarks[i]=generate_landmarks_frame(image,face_detector,predictor)
     return video_landmarks
 
-#landmark=facial_landmark(r'D:\Project1\fit3162_fit3164\dataset\test\audio2lm\data\M003\video\angry\001.mp4')
+#landmark=facial_landmark(r'D:\Project2\dataset\train\train\landmark\dataset_M030\video\angry\028.mp4')
 #print(landmark.shape)
