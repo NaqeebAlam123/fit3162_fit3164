@@ -6,27 +6,41 @@ import dlib
 #import multiprocessing
 import numpy as np
 #from google.colab.patches import cv2_imshow
+class PathNotFoundError(Exception):
+    pass
+
+class InvalidNumberofFrames(Exception):
+    pass
 
 def extracting_frames(video_path,number_of_frames):
-    video_path = os.path.normpath(video_path)   
-    
-    video_dr,filename=os.path.split(video_path)
+    if  not os.path.exists(video_path):
+        #_, file = os.path.split(video_path)
+        #print(file)
+        raise PathNotFoundError
+    else:
+        extension=os.path.splitext(os.path.split(video_path)[1])[1]
+        if extension != ".mp4":
+            raise FileNotFoundError
+
+
+    video_path = os.path.normpath(video_path)
+
     stream=cv2.VideoCapture(video_path)
-    #end=int(stream.get(cv2.CAP_PROP_FRAME_COUNT))
+    total_number_of_frames=int(stream.get(cv2.CAP_PROP_FRAME_COUNT))
     stream.set(1 ,0)
     start=0
     image_lst=[]
     end=number_of_frames
+    if end>total_number_of_frames:
+        raise InvalidNumberofFrames
     while start<end:
         _,image=stream.read()
-        if image is None:
-            print("Exit")
-            break
+        if image is not None:
+            image_lst = image_lst + [image]
         #save_path=os.path.join(saving_path,"{:010d}.jpg".format(start)) 
         #print(save_path)
         #if not os.path.exists(save_path):
-        #    cv2.imwrite(save_path, image)
-        image_lst=image_lst+[image]
+        #    cv2.imwrite(save_path, image
         start=start+1
     stream.release()
     return image_lst
@@ -62,14 +76,13 @@ def generate_landmarks_frame(image,face_detector,predictor):
            landmarks=landmarks+ [x,y]
    return np.array(landmarks)
 
-def facial_landmark(video_path):
+def facial_landmark(video_path,number_of_frames):
     face_detector=dlib.get_frontal_face_detector()
     
-    predictor = dlib.shape_predictor(r"D:\Project2\fit3162_fit3164\shape_predictor_68_face_landmarks.dat")
+    predictor = dlib.shape_predictor(r"../../../shape_predictor_68_face_landmarks.dat")
     # Loading image
     # #image=cv2.imread(path)
     # # Resizing the image and converting to gray scale to exclude any other faces in image
-    number_of_frames=25
     video_landmarks=np.empty((number_of_frames,136),dtype=int)
     for (i,image) in enumerate(extracting_frames(video_path,number_of_frames)):
         video_landmarks[i]=generate_landmarks_frame(image,face_detector,predictor)

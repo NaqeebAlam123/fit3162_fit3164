@@ -19,7 +19,7 @@ def extracting_facial_landmarks(path):
            #facial_landmark(str(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4'))))
            #D:\Project2\dataset\train\train\landmark\dataset_M030\video\angry
            #print(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4'))
-            array=facial_landmark(str(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4')))
+            array=facial_landmark(str(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4')),25)
             #print(storepath + str(str(i+1).rjust(3, '0')) + '\\' + '0.npy')
             #array=[]
             os.makedirs(storepath+ str(str(i+1).rjust(3, '0')),exist_ok=True)
