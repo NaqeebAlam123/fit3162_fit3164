@@ -7,9 +7,9 @@ def extracting_facial_landmarks(path):
     for path in p.iterdir():
         print('starting facial landmark extraction for ' + path.name)
         if path.name == 'neutral':
-            storepath = "../../../dataset/train/train/dataset_M030/landmark/M030_"+path.name+'_1_'
+            storepath = "../../../dataset/train/train/landmark/dataset_M030/landmark/M030_"+path.name+'_1_'
         else:
-            storepath = "../../../dataset/train/train/dataset_M030/landmark/M030_"+path.name+'_3_'
+            storepath = "../../../dataset/train/train/landmark/dataset_M030/landmark/M030_"+path.name+'_3_'
         facial_landmark_all = []
         #os.makedirs(storepath,exist_ok=True)
         for i in range(len(list(path.iterdir()))):
