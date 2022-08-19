@@ -2,28 +2,27 @@ import os
 import numpy as np
 from facial_landmarks import facial_landmark
 from pathlib import Path
-
 def extracting_facial_landmarks(path):
     p=Path(path)
     for path in p.iterdir():
         print('starting facial landmark extraction for ' + path.name)
         if path.name == 'neutral':
-            storepath = r'D:\Project2\dataset\train\train\landmark\dataset_M030\landmark\M030_'+path.name+'_1_'
+            storepath = "../../../dataset/train/train/dataset_M030/landmark/M030_"+path.name+'_1_'
         else:
-            storepath = r'D:\Project2\dataset\train\train\landmark\dataset_M030\landmark\M030_'+path.name+'_3_'
+            storepath = "../../../dataset/train/train/dataset_M030/landmark/M030_"+path.name+'_3_'
         facial_landmark_all = []
         #os.makedirs(storepath,exist_ok=True)
         for i in range(len(list(path.iterdir()))):
             #type(str(path.joinpath(str(str(i).rjust(3, '0'))+'.mp4')))
 
            #facial_landmark(str(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4'))))
-           #D:\Project2\dataset\train\train\landmark\dataset_M030\video\angry
+           #D:\Project2\ss\train\train\landmark\dataset_M030\video\angry
            #print(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4'))
             array=facial_landmark(str(path.joinpath(str(str(i+1).rjust(3, '0'))+'.mp4')),25)
             #print(storepath + str(str(i+1).rjust(3, '0')) + '\\' + '0.npy')
             #array=[]
             os.makedirs(storepath+ str(str(i+1).rjust(3, '0')),exist_ok=True)
-            np.save(storepath + str(str(i+1).rjust(3, '0')) + '\\' + '0.npy', array)
+            np.save(storepath + str(str(i+1).rjust(3, '0')) + '/' + '0.npy', array)
            #print(i+1)
         print('completed for ' + path.name)
         #print(np.array(facial_landmark_all).shape)
@@ -70,5 +69,5 @@ def extracting_facial_landmarks(path):
 
 
 
-path=r'D:\Project2\dataset\train\train\landmark\dataset_M030\video'
+path= "../../../dataset/train/train/landmark/dataset_M030/video"
 extracting_facial_landmarks(path)

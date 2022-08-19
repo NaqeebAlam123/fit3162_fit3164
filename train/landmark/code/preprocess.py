@@ -26,13 +26,13 @@ import dlib
 #import cPickle as pickle
 
 #mfcc file split
-p = Path(r'D:\Project2\MFCC\MFCC\M030')
+p = Path("../../../MFCC/M030")
 for path in p.iterdir():
 # path returns the whole path to specific mfcc file D:\Project2\MFCC\MFCC\M030\surprised_029
     if path.name.split('_')[0] == 'neutral':
-        storepath = r'D:\Project2\dataset\train\train\landmark\dataset_M030\mfcc\M030_'+path.name.split('_')[0]+'_1_'+path.name.split('_')[1]
+        storepath = "../../../dataset/train/train/landmark/dataset_M030/mfcc/M030_"+path.name.split('_')[0]+'_1_'+path.name.split('_')[1]
     else:
-        storepath = r'D:\Project2\dataset\train\train\landmark\dataset_M030\mfcc\M030_'+path.name.split('_')[0]+'_3_'+path.name.split('_')[1]
+        storepath = "../../../dataset/train/train/landmark/dataset_M030/mfcc/M030_"+path.name.split('_')[0]+'_3_'+path.name.split('_')[1]
     os.makedirs(storepath,exist_ok=True)
     #print(path)
     # mfcc_all = []
@@ -46,7 +46,7 @@ for path in p.iterdir():
 #get train&val lists
 train_list = []
 val_list = []
-p = Path(r'D:\Project2\dataset\train\train\landmark\dataset_M030\mfcc')
+p = Path("../../../dataset/train/train/landmark/dataset_M030/mfcc")
 for path in p.iterdir():
     for mpath in path.iterdir():
         #print(path.name + '\\' + mpath.name)
@@ -58,18 +58,18 @@ for path in p.iterdir():
 
 # for i in range(len(train_list)):
 #     print(train_list[i])
+path="../../../dataset/train/train/landmark/dataset_M030/basics/train_M030.pkl"
 
-
-with open(r'D:\Project2\dataset\train\train\landmark\dataset_M030\basics\train_M030.pkl', 'wb') as f:
+with open("../../../dataset/train/train/landmark/dataset_M030/basics/train_M030.pkl", 'wb') as f:
      pickle.dump(train_list, f)
-with open(r'D:\Project2\dataset\train\train\landmark\dataset_M030\basics\val_M030.pkl', 'wb') as f:
+with open("../../../dataset/train/train/landmark/dataset_M030/basics/val_M030.pkl", 'wb') as f:
      pickle.dump(val_list, f)
 
 #get pca(mean&U)
 lm_all = []
 count=0
 for i in range(len(train_list)):
-    path = Path(r'D:\Project2\dataset\train\train\landmark\dataset_M030\landmark')
+    path = Path("../../../dataset/train/train/landmark/dataset_M030/landmark")
     p=path.joinpath(train_list[i])
     #print(p)
     # check if the file exists and then add the landmark values to lm_all
@@ -86,9 +86,8 @@ lm1 = lm - mean
 lm1 = np.array(lm1)
 U,s,V = np.linalg.svd(lm1.T)
 
-
-np.save(r'D:\Project2\dataset\train\train\landmark\dataset_M030\basics\U_68.npy', U)
-np.save(r'D:\Project2\dataset\train\train\landmark\dataset_M030\basics\mean_68.npy', mean)
+np.save("../../../dataset/train/train/landmark/dataset_M030/basics/U_68.npy", U)
+np.save("../../../dataset/train/train/landmark/dataset_M030/basics/mean_68.npy", mean)
 
 
 

@@ -88,5 +88,5 @@ def facial_landmark(video_path,number_of_frames):
         video_landmarks[i]=generate_landmarks_frame(image,face_detector,predictor)
     return video_landmarks
 
-#landmark=facial_landmark(r'D:\Project2\dataset\train\train\landmark\dataset_M030\video\angry\028.mp4')
+#landmark=facial_landmark(r'D:\Project2\ss\train\train\landmark\dataset_M030\video\angry\028.mp4')
 #print(landmark.shape)
