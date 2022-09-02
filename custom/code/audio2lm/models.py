@@ -1,8 +1,11 @@
+import os
+import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 from ops import conv2d
 import torchvision.models as models
 import numpy as np
+import seaborn as sns
 
 
 class Flatten(nn.Module):
@@ -82,7 +85,7 @@ class EmotionNet(nn.Module):
 
 class Ct_Decoder(nn.Module):
     def __init__(self):
-        super(Decoder, self).__init__()
+        super(Ct_Decoder, self).__init__()
         self.decon = nn.Sequential(
                 nn.ConvTranspose2d(384, 256, kernel_size=6, stride=2, padding=1, bias=True),#4,4
                 nn.BatchNorm2d(256),
@@ -101,13 +104,11 @@ class Ct_Decoder(nn.Module):
                 nn.Tanh(),
                 )
 
-    def forward(self, content,emotion):
+    def forward(self, content, emotion):
         features = torch.cat([content,  emotion], 1) #connect tensors inputs and dimension
         features = torch.unsqueeze(features,2)
         features = torch.unsqueeze(features,3)
         x = 90*self.decon(features) #[1, 1,28, 12]
-
-
         return x
 
 
@@ -130,7 +131,7 @@ class AutoEncoder2x(nn.Module):
 
         self.con_encoder = Ct_encoder()
         self.emo_encoder = EmotionNet()
-        self.decoder = Decoder()
+        self.decoder = Ct_Decoder()
         self.classify = Classify()
 
         self.CroEn_loss =  nn.CrossEntropyLoss()
@@ -208,9 +209,6 @@ class AutoEncoder2x(nn.Module):
         return acc
 
     def process(self, data): # called in train_func
-
-
-
         labels = [data[name] for name in self.labels_name]
         inputs = [data[name] for name in self.inputs_name]
         targets = [data[name] for name in self.targets_name]
@@ -328,21 +326,21 @@ class AutoEncoder2x(nn.Module):
                 g = target[i,:,:,:].squeeze()
                 g = g.cpu().numpy()
            # plt.figure()
-                ax = sns.heatmap(g, vmin=-100, vmax=100,cmap='rainbow')      #frames
+                # ax = sns.heatmap(g, vmin=-100, vmax=100,cmap='rainbow')      #frames
 
                 filepath = os.path.join(save_path,a[j])
                 if not os.path.exists(filepath):
                     os.makedirs(filepath)
-                plt.savefig(os.path.join(filepath,'real_'+str(i)+'.png'))
-                plt.close()
+                # plt.savefig(os.path.join(filepath,'real_'+str(i)+'.png'))
+                # plt.close()
       #      plt.show()
                 o = output[i,:,:,:].squeeze()
                 o = o.cpu().detach().numpy()
       #      plt.figure()
-                ax = sns.heatmap(o, vmin=-100, vmax=100,cmap='rainbow')      #frames
+                # ax = sns.heatmap(o, vmin=-100, vmax=100,cmap='rainbow')      #frames
 
-                plt.savefig(os.path.join(filepath,'fake_'+str(i)+'.png'))
-                plt.close()
+                # plt.savefig(os.path.join(filepath,'fake_'+str(i)+'.png'))
+                # plt.close()
       #      plt.show()
 
 
@@ -382,8 +380,8 @@ class AT_emotion(nn.Module):
         self.mse_loss_fn = nn.MSELoss()
         self.l1loss = nn.L1Loss()
 
-        self.pca = torch.FloatTensor(np.load('landmark/basics/U_106.npy')[:, :16])
-        self.mean = torch.FloatTensor(np.load('landmark/basics/mean_106.npy'))
+        self.pca = torch.FloatTensor(np.load('code/audio2lm/landmark/basics/U_68.npy')[:, :16])
+        self.mean = torch.FloatTensor(np.load('code/audio2lm/landmark/basics/mean_68.npy'))
 
         self.optimizer = torch.optim.Adam(list(self.con_encoder.parameters())
                                             +list(self.emo_encoder.parameters())
@@ -397,8 +395,6 @@ class AT_emotion(nn.Module):
         return acc
 
     def process(self,example_landmark, landmark, mfccs):
-
-
         l = self.lm_encoder(example_landmark)
 
         lstm_input = []

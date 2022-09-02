@@ -16,23 +16,7 @@ from models import EmotionNet, AutoEncoder2x, AT_emotion
 
 import tensorboardX
 from config import config
-
-
-EMOTION_NET_DATASET_DIR = 'data/mfcc/M030'
-EMOTION_NET_MODEL_DIR = 'saved_models/EmotionNet/M030/'
-
-AUTOENCODER_2X_DATASET_DIR = 'train/disentanglement/emotion_length/M030/'
-AUTOENCODER_2X_MODEL_DIR = 'saved_models/AutoEncoder2x/M030/'
-AUTOENCODER_2X_RESUME_DIR = '/media/thea/Data/New_exp/3_intensity_M030/SER_intensity_3/model/81_pretrain.pth'
-AUTOENCODER_2X_IMAGE_DIR = 'image/M030/'
-AUTOENCODER_2X_LOG_DIR = 'log/M030/'
-
-# LM_ENCODER_DATASET_DIR = '../dataset_M003/'
-# LM_ENCODER_MODEL_DIR = '../model_M030/'
-# LM_ENCODER_PRETRAINED_DIR = 'train/disentanglement/model_M030/99_pretrain.pth'
-
-ATPRETRAINED_DIR = 'pretrained_models/atnet_lstm_18.pth' ## NOTE: Ct_encoder pretrain
-SERPRETRAINED_DIR = f'{EMOTION_NET_MODEL_DIR}/SER_8.pkl'
+from constants import *
 
 
 def _initialize_weights(net, init_type='xavier', gain=0.02):
@@ -84,7 +68,7 @@ def train_EmotionNet(config):
     print('load data begin')
     train_set = SER_MFCC(EMOTION_NET_DATASET_DIR,'train')
     val_set = SER_MFCC(EMOTION_NET_DATASET_DIR,'val')
-    # train_set,test_set = train_test_split(dataset,test_size=0.2,random_state=1)
+    # train_set, test_set = train_test_split(dataset,test_size=0.2,random_state=1)
     train_loader = DataLoader(train_set,batch_size=config.batch_size,
                                         num_workers=config.num_thread,
                                         shuffle=True, drop_last=True)
@@ -108,7 +92,7 @@ def train_EmotionNet(config):
 
             fake = model(data)
             loss = CroEn_loss(fake,label)
-            acc  =  _compute_accuracy(label, fake)
+            acc = _compute_accuracy(label, fake)
             writer.add_scalar('Train', loss, train_iter)
 
             opt_m.zero_grad()
@@ -138,7 +122,7 @@ def train_EmotionNet(config):
 
                 fake = model(data)
                 loss_t = CroEn_loss(fake,label)
-                val_acc  =  _compute_accuracy(label, fake)
+                val_acc = _compute_accuracy(label, fake)
 
                 writer.add_scalar('Val',loss_t,val_iter)
 
@@ -176,7 +160,6 @@ def train_AutoEncoder2x(config):
             if isinstance(param, nn.Parameter):
                 param = param.data
             tgt_state[name].copy_(param)
-            print(name)
 
         # SER resume
         pretrain = torch.load(SERPRETRAINED_DIR)
@@ -192,9 +175,8 @@ def train_AutoEncoder2x(config):
             if isinstance(param, nn.Parameter):
                 param = param.data
             if name in tgt_state:
-
                 tgt_state[name].copy_(param)
-                print(name)
+
         strip = 'module.'
         for name, param in pretrain.items():
             if strip is not None and name.startswith(strip):
@@ -206,7 +188,6 @@ def train_AutoEncoder2x(config):
                 param = param.data
             if name in tgt_state:
                 tgt_state[name].copy_(param)
-                print(name)
 
     #------- 2. Load training data -------#
     print('start split')
@@ -223,7 +204,7 @@ def train_AutoEncoder2x(config):
     #------- 3. Train the model-------#
     writer = tensorboardX.SummaryWriter(comment='M030')
 
-    train_iter, val_iter = 0, 0
+    total_steps, train_iter, val_iter = 0, 0, 0
     start_epoch = config.start_epoch
 
     # if config.resume :
@@ -238,19 +219,19 @@ def train_AutoEncoder2x(config):
     #     print('load resume model')
 
     a = time.time()
+
     for epoch in range(start_epoch, config.max_epochs):
         epoch_start_time = time.time()
-
         acc_1 = 0.0
         acc_2 = 0.0
 
         for i, data in enumerate(train_loader):
             # data = Variable(data.float().cuda())
-
+            iter_start_time = time.time()
             outputs, losses, acces = model.train_func(data)
             losses_values = {k:v.item() for k, v in losses.items()}
             acces_values = {k:v.item() for k, v in acces.items()}
-
+            
             for k, v in losses_values.items():
                 writer.add_scalar(k, v, train_iter)
 
@@ -259,13 +240,13 @@ def train_AutoEncoder2x(config):
 
             loss = sum(losses.values())
             writer.add_scalar('train_loss', loss, train_iter)
-
+            
             # opt_m.zero_grad()
             # loss.backward()
             # opt_m.step()
 
-            if (train_iter % 10 == 0):
-                print('[%d,%5d / %d] con_feature loss :%.10f cla_1 loss :%.10f train loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(train_loader), losses['con_feature'].item(),losses['cla_1'].item(),loss.item(),time.time()-a))
+            # if (train_iter % 10 == 0):
+            #     print('[%d,%5d / %d] con_feature loss :%.10f cla_1 loss :%.10f train loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(train_loader), losses['con_feature'].item(),losses['cla_1'].item(),loss.item(),time.time()-a))
 
             if (train_iter % 100 ==0): #500
                 with open(AUTOENCODER_2X_LOG_DIR + 'train.txt','a') as file_handle:
@@ -283,7 +264,6 @@ def train_AutoEncoder2x(config):
             # torch.save(model.state_dict(), string)
             writer.add_scalar('acc_1',float(acc_1)/(i+1),epoch+1)
             writer.add_scalar('acc_2',float(acc_2)/(i+1),epoch+1)
-
         torch.save({
                     'train_step': train_iter,
                     'test_step': val_iter,
@@ -334,8 +314,8 @@ def train_AutoEncoder2x(config):
 
 # landmark
 def train_AT_Emotion(config):
-    train_set=SMED_1D_lstm_landmark_pca(config.dataset_dir,'train')
-    test_set=SMED_1D_lstm_landmark_pca(config.dataset_dir,'test')
+    train_set=SMED_1D_lstm_landmark_pca(LM_ENCODER_DATASET_LANDMARK_DIR,'train')
+    test_set=SMED_1D_lstm_landmark_pca(LM_ENCODER_DATASET_LANDMARK_DIR,'test')
     #train_set,test_set = train_test_split(dataset,test_size=0.2,random_state=1)
     train_loader = DataLoader(train_set,
                             batch_size=config.batch_size,
@@ -364,7 +344,7 @@ def train_AT_Emotion(config):
 
     if config.pretrain :
         # ATnet resume
-        pretrain = torch.load(config.pretrained_dir)
+        pretrain = torch.load(LM_ENCODER_PRETRAINED_DIR)
         pretrain = pretrain['model']
         tgt_state = generator.state_dict()
         strip = 'con_encoder.'
@@ -385,7 +365,6 @@ def train_AT_Emotion(config):
                 continue
             if strip is not None and name.startswith(strip):
                 tgt_state[name].copy_(param)
-                print(name)
 
     if config.pretrain_sep :
         # ATnet resume
@@ -401,7 +380,6 @@ def train_AT_Emotion(config):
             if isinstance(param, nn.Parameter):
                 param = param.data
             tgt_state[name].copy_(param) # load pretrain param
-            print(name)
 
         #SER resume
         pretrain = torch.load(config.serpretrained_dir)
@@ -423,9 +401,10 @@ def train_AT_Emotion(config):
     """ 3. loss function """
     #l1_loss_fn   = nn.L1Loss()
     #mse_loss_fn = nn.MSELoss()
+    ## NOTE: uncomment 2 lines below
 
-    pca =np.load('landmark/basics/U_106.npy')[:, :16]
-    mean =np.load('landmark/basics/mean_106.npy')
+    # pca =np.load('landmark/basics/U_106.npy')[:, :16]
+    # mean =np.load('landmark/basics/mean_106.npy')
 
     """ 4. train & validation"""
     start_epoch = 0
@@ -455,8 +434,8 @@ def train_AT_Emotion(config):
     #     result=np.dot(lmark,pca.T)+mean
 
             all_loss += loss.item()
-            t2=time.time()
-            train_itr+=1
+            t2 = time.time()
+            train_itr += 1
         #  writer.add_scalars('Train',{'loss_pca':loss_pca,'loss_lm':loss_lm,'loss':loss},train_itr)
             writer.add_scalar('Train',loss,train_itr)
             writer.add_scalar('Train_lm',loss_lm,train_itr)
@@ -470,12 +449,12 @@ def train_AT_Emotion(config):
 
         torch.save(generator.state_dict(),
                                 "{}/atnet_emotion_{}.pth"
-                                .format(config.model_dir,epoch))
+                                .format(LM_ENCODER_MODEL_DIR,epoch))
 
         t0 = time.time()
         print("final average train loss = ", float(all_loss)/(step+1))
-        #validation
 
+        # ------- Validation ------ #
         all_val_loss = 0.0
         for step, (example_landmark, example_audio, lmark, mfccs) in enumerate(test_loader):
             with torch.no_grad():

@@ -1,0 +1,14 @@
+*.wav
+*.m4a
+*.mp4
+*.jpg
+*.txt
+*.pyc
+*.npy
+*.png
+*/runs/*
+*.pth
+*.pkl
+.DS_Store
+*-checkpoint.ipynb
+*.zip
