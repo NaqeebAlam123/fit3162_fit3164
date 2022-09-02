@@ -416,14 +416,14 @@ class AT_emotion(nn.Module):
 
         loss_pca = self.mse_loss_fn(fake, landmark)
 
-        fake_result = torch.mm(fake[0]+example_landmark,self.pca.transpose(0,1))+self.mean.expand(fake.shape[1],212).unsqueeze(0)
+        fake_result = torch.mm(fake[0]+example_landmark,self.pca.transpose(0,1))+self.mean.expand(fake.shape[1],136).unsqueeze(0)
         for i in range(1,len(fake)):
-            fake_result = torch.cat((fake_result,torch.mm(fake[i]+example_landmark,self.pca.transpose(0,1))+self.mean.expand(fake.shape[1],212).unsqueeze(0)),0)
-        result = torch.mm(landmark[0]+example_landmark,self.pca.transpose(0,1))+self.mean.expand(landmark.shape[1],212).unsqueeze(0)
+            fake_result = torch.cat((fake_result,torch.mm(fake[i]+example_landmark,self.pca.transpose(0,1))+self.mean.expand(fake.shape[1],136).unsqueeze(0)),0)
+        result = torch.mm(landmark[0]+example_landmark,self.pca.transpose(0,1))+self.mean.expand(landmark.shape[1],136).unsqueeze(0)
         for i in range(1,len(landmark)):
-            result = torch.cat((result,torch.mm(landmark[i]+example_landmark,self.pca.transpose(0,1))+self.mean.expand(landmark.shape[1],212).unsqueeze(0)),0)
+            result = torch.cat((result,torch.mm(landmark[i]+example_landmark,self.pca.transpose(0,1))+self.mean.expand(landmark.shape[1],136).unsqueeze(0)),0)
 
-      #  result = torch.mm(landmark,self.pca.transpose(0,1))+self.mean.expand(len(fake),16,212)
+      #  result = torch.mm(landmark,self.pca.transpose(0,1))+self.mean.expand(len(fake),16,136)
         loss_lm = self.mse_loss_fn(fake_result, result)
        # loss = self.l1loss(fake, landmark)
         return fake, loss_pca,10*loss_lm

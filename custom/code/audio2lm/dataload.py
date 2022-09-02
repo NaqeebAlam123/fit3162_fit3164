@@ -146,34 +146,26 @@ class GET_MFCC(data.Dataset):
                 "input21": mfcc21, "input32": mfcc32
               }
 
-
     def __len__(self):
-
        # return self.all_number * len(self.emo_number)
         return len(self.con_number) * len(self.emo_number)
 
 
 class SMED_1D_lstm_landmark_pca(data.Dataset):
-    def __init__(self,
-                 dataset_dir,train = 'train'):
-
+    def __init__(self, dataset_dir,train = 'train'):
         self.num_frames = 16
         self.data_root = DATAROOT
-      #  self.audio_root = '/media/asus/840C73C4A631CC36/MEAD/ATnet_emotion/dataset/MFCC'
         self.train = train
-
-        file = open(f'{LANDMARK_BASICS}train_M030.pkl', "rb") #'rb'-read binary file
+        file = open(f'{LANDMARK_BASICS}train_M030.pkl', "rb")
         self.train_data = pickle.load(file)
-        print('train data', self.train_data)
         file.close()
 
-        file = open(f'{LANDMARK_BASICS}val_M030.pkl', "rb") #'rb'-read binary file
+        file = open(f'{LANDMARK_BASICS}val_M030.pkl', "rb")
         self.test_data = pickle.load(file)
         file.close()
 
-        self.pca = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}U_68.npy')[:, :16]).reshape(136,-1)
+        self.pca = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}U_68.npy')[:, :16])
         self.mean = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}mean_68.npy'))
-
 
     def __getitem__(self, index):
         if self.train == 'train':
@@ -181,7 +173,7 @@ class SMED_1D_lstm_landmark_pca(data.Dataset):
             data_folder = self.train_data[index]
             # print('data_folder', data_folder)
             lmark_path = os.path.join(LM_ENCODER_DATASET_LANDMARK_DIR, data_folder)
-            audio_path = os.path.join(LM_ENCODER_DATASET_MFCC_DIR, data_folder )
+            audio_path = os.path.join(LM_ENCODER_DATASET_MFCC_DIR, data_folder)
             lmark = np.load(lmark_path)
             mfcc = np.load(audio_path)
 
@@ -195,19 +187,11 @@ class SMED_1D_lstm_landmark_pca(data.Dataset):
             example_landmark = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}mean_68.npy'))
 
             example_landmark = example_landmark - self.mean.expand_as(example_landmark)
-            # example_landmark = example_landmark.reshape(-1,136)
-            # example_landmark = torch.mm(example_landmark, self.pca)
-            # import ipdb
-            # ipdb.set_trace()
+            example_landmark = example_landmark.reshape(1,136)
+            example_landmark = torch.mm(example_landmark, self.pca)
     
-            # example_landmark = example_landmark.reshape(16)
-
-            ## NOTE: 106-point
-            # example_landmark = example_landmark.reshape(1,212)
-            # example_landmark = torch.mm(example_landmark, self.pca)
-    
-            # example_landmark = example_landmark.reshape(16)
-
+            example_landmark = example_landmark.reshape(16)
+            
             example_mfcc = mfcc[r,:, 1:]
             mfccs = mfcc[r + 1: r + 17,:, 1:]
 
@@ -238,6 +222,7 @@ class SMED_1D_lstm_landmark_pca(data.Dataset):
           #  example_landmark = lmark[r, :]
             example_landmark = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}mean_68.npy'))
             example_landmark = example_landmark - self.mean.expand_as(example_landmark)
+            # example_landmark = example_landmark.reshape(1,136)
             example_landmark = example_landmark.reshape(1,136)
             example_landmark = torch.mm(example_landmark, self.pca)
             example_landmark = example_landmark.reshape(16)

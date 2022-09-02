@@ -423,8 +423,7 @@ def train_AT_Emotion(config):
                 mfccs = Variable(mfccs.float())
                 example_landmark = Variable(example_landmark.float())
 
-
-            fake_lmark,loss_pca, loss_lm= generator.train_func(  example_landmark, lmark, mfccs)
+            fake_lmark, loss_pca, loss_lm= generator.train_func(example_landmark, lmark, mfccs)
 
             loss_pca = 1000*loss_pca
             loss_lm = 1000*loss_lm
