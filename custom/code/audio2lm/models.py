@@ -6,7 +6,7 @@ from ops import conv2d
 import torchvision.models as models
 import numpy as np
 import seaborn as sns
-
+from constants import LANDMARK_BASICS
 
 class Flatten(nn.Module):
     def forward(self, input):
@@ -353,8 +353,12 @@ class Decoder(nn.Module):
         )
 
     def forward(self, lstm_input):
-        hidden = ( torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256)),# torch.Size([3, 16, 256])
-                      torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256)))# torch.Size([3, 16, 256])
+        hidden = ( torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256).cuda()),# torch.Size([3, 16, 256])
+                      torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256).cuda()))# torch.Size([3, 16, 256])
+
+        #  hidden = ( torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256)),# torch.Size([3, 16, 256])
+        #               torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256)))# torch.Size([3, 16, 256])
+
 
         lstm_out, _ = self.lstm(lstm_input, hidden) #torch.Size([16, 16, 256])
         fc_out   = []
@@ -380,8 +384,12 @@ class AT_emotion(nn.Module):
         self.mse_loss_fn = nn.MSELoss()
         self.l1loss = nn.L1Loss()
 
-        self.pca = torch.FloatTensor(np.load('code/audio2lm/landmark/basics/U_68.npy')[:, :16])
-        self.mean = torch.FloatTensor(np.load('code/audio2lm/landmark/basics/mean_68.npy'))
+        # self.pca = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}U_68.npy')[:, :16])
+        # self.mean = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}mean_68.npy'))
+
+        self.pca = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}U_68.npy')[:, :16]).cuda()
+        self.mean = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}mean_68.npy')).cuda()
+
 
         self.optimizer = torch.optim.Adam(list(self.con_encoder.parameters())
                                             +list(self.emo_encoder.parameters())

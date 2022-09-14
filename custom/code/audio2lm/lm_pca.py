@@ -112,9 +112,9 @@ for path in mfcc_dataset.iterdir():
     idx = 025
     '''
     if _emotion == 'neutral':
-        outpath = f'{LM_ENCODER_DATASET_MFCC_DIR}/M030_neutral_1_{idx}/'
+        outpath = f'{LM_ENCODER_DATASET_MFCC_DIR}M030_neutral_1_{idx}/'
     else:
-        outpath = f'{LM_ENCODER_DATASET_MFCC_DIR}/M030_{_emotion}_3_{idx}/'
+        outpath = f'{LM_ENCODER_DATASET_MFCC_DIR}M030_{_emotion}_3_{idx}/'
 
     os.makedirs(outpath, exist_ok=True)
     mfcc_all = []
@@ -141,9 +141,9 @@ for path in mfcc_dataset.iterdir():
         else:
             train_list.append(f'{path.name}/{mpath.name}')
 
-with open('code/audio2lm/landmark/basics/train_M030.pkl', 'wb') as f:
+with open('data/landmark/landmark_68/M030/basics/train_M030.pkl', 'wb') as f:
     pickle.dump(train_list, f)
-with open('code/audio2lm/landmark/basics/val_M030.pkl', 'wb') as f:
+with open('data/landmark/landmark_68/M030/basics/val_M030.pkl', 'wb') as f:
     pickle.dump(val_list, f)
 
 lm_all = []

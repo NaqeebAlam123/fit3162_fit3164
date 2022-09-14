@@ -28,7 +28,7 @@ def parse_args():
                         type=int,
                         default=100)
     parser.add_argument("--cuda",
-                        default=False)
+                        default=True)
     parser.add_argument('--device_ids', type=str, default='0')
 
     parser.add_argument('--num_thread', type=int, default=0)

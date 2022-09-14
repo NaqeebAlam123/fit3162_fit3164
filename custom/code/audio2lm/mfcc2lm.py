@@ -14,7 +14,8 @@ import numpy as np
 from dataload import SER_MFCC, GET_MFCC, SMED_1D_lstm_landmark_pca
 from models import EmotionNet, AutoEncoder2x, AT_emotion
 
-import tensorboardX
+#import tensorboardX
+from torch.utils.tensorboard import SummaryWriter
 from config import config
 from constants import *
 
@@ -50,6 +51,11 @@ def _compute_accuracy(input_label, out):
     return acc
 
 
+# def _log(file_handle, epoch, len_train_loader, loss):
+#     ...
+#     pass
+
+
 # emotion_pretrain
 def train_EmotionNet(config):
     '''
@@ -78,7 +84,7 @@ def train_EmotionNet(config):
     print('load data end')
     
     #------- 3. Train the model-------#
-    writer = tensorboardX.SummaryWriter(comment='M030')
+    writer = SummaryWriter(comment='M030')
     train_iter, val_iter = 0, 0
 
     training_start_time = time.time()
@@ -138,6 +144,7 @@ def train_AutoEncoder2x(config):
     os.makedirs(AUTOENCODER_2X_MODEL_DIR,exist_ok = True)
 
     #------- 1. Load model -------#
+    torch.backends.cudnn.benchmark = True
     model = AutoEncoder2x(config)
     #CroEn_loss =  nn.CrossEntropyLoss()
     if config.cuda:
@@ -202,7 +209,7 @@ def train_AutoEncoder2x(config):
     print('end split')
 
     #------- 3. Train the model-------#
-    writer = tensorboardX.SummaryWriter(comment='M030')
+    writer = SummaryWriter(comment='M030')
 
     total_steps, train_iter, val_iter = 0, 0, 0
     start_epoch = config.start_epoch
@@ -314,6 +321,9 @@ def train_AutoEncoder2x(config):
 
 # landmark
 def train_AT_Emotion(config):
+
+    """ 1. load the data """
+    print('start split')
     train_set=SMED_1D_lstm_landmark_pca(LM_ENCODER_DATASET_LANDMARK_DIR,'train')
     test_set=SMED_1D_lstm_landmark_pca(LM_ENCODER_DATASET_LANDMARK_DIR,'test')
     #train_set,test_set = train_test_split(dataset,test_size=0.2,random_state=1)
@@ -327,18 +337,20 @@ def train_AT_Emotion(config):
                             num_workers=config.num_thread,
                             shuffle=True, drop_last=True)
 
+    print('end split')
+
     #pca = torch.FloatTensor(np.load('/home/jixinya/first-2D frontalize/U_2Df.npy')[:,:20] )#20
     #mean = torch.FloatTensor(np.load('/home/jixinya/first-2D frontalize/mean_2Df.npy'))
     num_steps_per_epoch = len(train_loader)
     num_val = len(test_loader)
 
-    writer=tensorboardX.SummaryWriter(comment='M019')
+    writer=SummaryWriter(comment='M019')
 
     """ 2. load the model """
     generator = AT_emotion(config)
     if config.cuda:
         device_ids = [int(i) for i in config.device_ids.split(',')]
-        generator = generator
+        generator = generator.cuda()
 
     #initialize_weights(generator)
 
@@ -403,8 +415,8 @@ def train_AT_Emotion(config):
     #mse_loss_fn = nn.MSELoss()
     ## NOTE: uncomment 2 lines below
 
-    # pca =np.load('landmark/basics/U_106.npy')[:, :16]
-    # mean =np.load('landmark/basics/mean_106.npy')
+    pca =np.load(f'{LANDMARK_BASICS}U_68.npy')[:, :16]
+    mean =np.load(f'{LANDMARK_BASICS}mean_68.npy')
 
     """ 4. train & validation"""
     start_epoch = 0
@@ -419,9 +431,9 @@ def train_AT_Emotion(config):
             t1 = time.time()
 
             if config.cuda:
-                lmark    = Variable(lmark.float())
-                mfccs = Variable(mfccs.float())
-                example_landmark = Variable(example_landmark.float())
+                lmark    = Variable(lmark.float()).cuda()
+                mfccs = Variable(mfccs.float()).cuda()
+                example_landmark = Variable(example_landmark.float()).cuda()
 
             fake_lmark, loss_pca, loss_lm= generator.train_func(example_landmark, lmark, mfccs)
 
@@ -453,14 +465,15 @@ def train_AT_Emotion(config):
         t0 = time.time()
         print("final average train loss = ", float(all_loss)/(step+1))
 
+        print("start to validate, epoch %d" %(epoch+1))
         # ------- Validation ------ #
         all_val_loss = 0.0
         for step, (example_landmark, example_audio, lmark, mfccs) in enumerate(test_loader):
             with torch.no_grad():
                 if config.cuda:
-                    lmark    = Variable(lmark.float())
-                    mfccs = Variable(mfccs.float())
-                    example_landmark = Variable(example_landmark.float())
+                    lmark    = Variable(lmark.float().cuda())
+                    mfccs = Variable(mfccs.float().cuda())
+                    example_landmark = Variable(example_landmark.float().cuda())
 
                 fake_lmark,loss_pca, loss_lm= generator.val_func( example_landmark, lmark, mfccs)
 

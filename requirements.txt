@@ -1,13 +1,14 @@
-torch==1.2.0
+torch
 torchvision
 numpy
 librosa
 opencv-python
 python_speech_features
-pickle
+#pickle
 matplotlib
 scikit-image
 Pillow
 tqdm
-dlib
+#dlib
 scipy
+seaborn
