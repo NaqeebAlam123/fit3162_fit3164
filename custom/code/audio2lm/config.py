@@ -24,7 +24,7 @@ def parse_args():
     parser.add_argument("--batch_size",
                         type=int,
                         default=16)
-    parser.add_argument("--max_epochs",
+    parser.add_argument("--max_epochs_val",
                         type=int,
                         default=100)
     parser.add_argument("--cuda",
@@ -36,7 +36,7 @@ def parse_args():
     parser.add_argument('--load_model', action='store_true')
     parser.add_argument('--pretrained_dir', type=str)
     parser.add_argument('--pretrained_epoch', type=int)
-    parser.add_argument('--start_epoch', type=int, default=0, help='start from 0')
+    #parser.add_argument('--start_epoch_val', type=int, default=0, help='start from 0')
 
     parser.add_argument('--triplet_margin', type=int, default=1)
     parser.add_argument('--triplet_weight', type=int, default=10)

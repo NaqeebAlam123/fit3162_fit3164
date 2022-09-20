@@ -1,12 +1,13 @@
 import os
+from string import Template
 import time
 import pickle
 import torch
-import torch.nn as nn
+import torch.nn as nn # neural network modules 
 from torch.nn import init
-import torch.nn.functional as F
-from torch.autograd import Variable
-from torch.utils.data import DataLoader
+import torch.nn.functional as F # activation function like ReLU etc
+from torch.autograd import Variable 
+from torch.utils.data import DataLoader # for easier dataset management (creation of batches to train and validate data on) 
 import torch.utils
 import torchvision
 import numpy as np
@@ -43,18 +44,76 @@ def _initialize_weights(net, init_type='xavier', gain=0.02):
         print('initialize network with %s' % init_type)
         net.apply(init_func)
 
+def train_test_batches_single_epoch(cross_entropy_loss, config, epoch, model, optimizer, start_train_time,
+                            iteration_val, data_loader, writer,mode,template):
+    
+    all_acc = 0.0     # calculating the accuracy for tha particular set of batches for training/validation
+    for batch_id_x, (data, target_label) in enumerate(data_loader):
+        iteration_val += 1
+        if config.cuda:
+            data, target_label = Variable(data.float()).cuda(), Variable(target_label.long()).cuda()
+        else:
+            data, target_label = Variable(data.float()), Variable(target_label.long())
 
-def _compute_accuracy(input_label, out):
-    _, pred = out.topk(1, 1)
+        # removes all the dimension of the input size 1 whilst returning tensor
+        target_label = torch.squeeze(target_label)
+
+        # predicting label 
+        predicted_label = model(data)
+        
+        # difference between predicted and target output
+        loss = cross_entropy_loss(predicted_label, target_label)  
+        
+        # calculate the accuracy b/w predicted and target label value
+        acc = accuracy(target_label, predicted_label)
+
+        if (mode == "Train"):
+
+          # clearing the gradient of all the Variables
+          optimizer.zero_grad()
+          
+          # for back propagation of errors (computing all gradients)
+          loss.backward()
+          
+          # func called after the computation of all gradients
+          optimizer.step()
+        
+        # adding data to the summary writer comprising of the loss, iter val, etc
+        writer.add_scalar(mode, loss, iteration_val)
+
+        # cummulative accuracy for that particular set of batches
+        all_acc += acc.item()
+
+        if (iteration_val % 1000 == 0):
+            time_taken=time.time()-start_train_time
+            # display loss, epochs, batch id, data size, etc on the terminal
+            print(template.substitute(epoch=epoch+1,batch_id=batch_id_x,data_Size=len(data_loader),mode=mode,loss=loss.item(),time=time_taken))
+    
+    writer.add_scalar(mode+'_acc', float(all_acc) / (batch_id_x + 1), epoch + 1)
+
+    if mode=="Train":
+     return (model,iteration_val)
+    else:
+     return iteration_val
+
+
+
+
+
+
+
+def accuracy(target_label, predicted_label):
+    '''
+    input: target_label, predicted_label
+    output: acc
+    '''
+    # returns 1 largest element along dimension 1
+    _, pred = predicted_label.topk(1, 1)
+    # joins 1 dimensional elements by removing dimension 1 from the size
     pred0 = pred.squeeze().data
-    acc = 100 * torch.sum(pred0 == input_label.data) / input_label.size(0)
+    # compares predicted and target labels
+    acc = 100 * torch.sum(pred0 == target_label.data) / target_label.size(0)
     return acc
-
-
-# def _log(file_handle, epoch, len_train_loader, loss):
-#     ...
-#     pass
-
 
 # emotion_pretrain
 def train_EmotionNet(config):
@@ -62,81 +121,73 @@ def train_EmotionNet(config):
     input: mfcc data
     output: SER_99.pkl
     '''
-    os.makedirs(EMOTION_NET_MODEL_DIR, exist_ok = True)
+    if not os.path.exists(EMOTION_NET_DATASET_DIR):
+        os.makedirs(EMOTION_NET_MODEL_DIR)
 
-    #------- 1. Load model -------#
-    model = EmotionNet()
-    CroEn_loss =  nn.CrossEntropyLoss()
-    _initialize_weights(model)
-    opt_m = torch.optim.Adam(model.parameters(), lr=config.lr, betas=(config.beta1, config.beta2))
-
-    #------- 2. Load training data -------#
+    # ------- 1. Load data -------#
     print('load data begin')
-    train_set = SER_MFCC(EMOTION_NET_DATASET_DIR,'train')
-    val_set = SER_MFCC(EMOTION_NET_DATASET_DIR,'val')
-    # train_set, test_set = train_test_split(dataset,test_size=0.2,random_state=1)
-    train_loader = DataLoader(train_set,batch_size=config.batch_size,
-                                        num_workers=config.num_thread,
-                                        shuffle=True, drop_last=True)
-    val_loader = DataLoader(val_set,batch_size=config.batch_size,
-                                        num_workers=config.num_thread,
-                                        shuffle=True, drop_last=True)
+    train_set = SER_MFCC(EMOTION_NET_DATASET_DIR, 'train')
+    val_set = SER_MFCC(EMOTION_NET_DATASET_DIR, 'val')
+
+
+    train_loader = DataLoader(train_set, batch_size=config.batch_size,
+                              num_workers=config.num_thread,
+                              shuffle=True, drop_last=True)
+    val_loader = DataLoader(val_set, batch_size=config.batch_size,
+                            num_workers=config.num_thread,
+                            shuffle=True, drop_last=True)
     print('load data end')
-    
-    #------- 3. Train the model-------#
+
+    # ------- 2. Initialize network and set up the environment(gpu or cpu) -------#
+    model = EmotionNet()
+
+    # loss between the predicted and target label
+    cross_entropy_loss = nn.CrossEntropyLoss()
+
+    if config.cuda:
+        device_ids = [int(i) for i in config.device_ids.split(',')]
+        model = nn.DataParallel(model, device_ids=device_ids).cuda()
+        cross_entropy_loss = cross_entropy_loss.cuda()
+        tripletloss = tripletloss.cuda()
+
+    # initialize weight of model
+    _initialize_weights(model)
+
+    # optimizating algorithm - Adam
+    optimizer = torch.optim.Adam(model.parameters(), lr=config.lr, betas=(config.beta1, config.beta2))
+
+    #------- 3. Train and validate the model-------#
     writer = SummaryWriter(comment='M030')
-    train_iter, val_iter = 0, 0
+    train_iteration_val, val_iteration_val = 0, 0
 
-    training_start_time = time.time()
-    for epoch in range(config.start_epoch, config.max_epochs):
-        all_acc = 0.0
-        for i, (data, label) in enumerate(train_loader):
-            train_iter += 1
-
-            data, label = Variable(data.float()), Variable(label.long())
-            label = torch.squeeze(label)
-
-            fake = model(data)
-            loss = CroEn_loss(fake,label)
-            acc = _compute_accuracy(label, fake)
-            writer.add_scalar('Train', loss, train_iter)
-
-            opt_m.zero_grad()
-            loss.backward()
-            opt_m.step()
-
-            all_acc += acc.item()
-
-            if (train_iter % 1000 == 0):
-                print('[%d,%5d / %d] train loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(train_loader), loss.item(),time.time()-training_start_time))
-
-        writer.add_scalar('Train_acc',float(all_acc)/(i+1),epoch+1)
-
-        string = os.path.join(EMOTION_NET_MODEL_DIR,'SER_'+str(epoch) + '.pkl') ## NOTE: where SER_99.pkl comes from
-        torch.save(model.state_dict(), string) ## NOTE: save model parameters
-
+    # template for displaying the loss and other info on terminal
+    t=Template('[$epoch,$batch_id / $data_Size] $mode loss :$loss timespent : $time')
+    
+    start_train_time = time.clock()
+    for epoch in range(config.max_epochs_val):
+        # training of the particular set of batches
+        (model,train_iteration_val) = train_test_batches_single_epoch(cross_entropy_loss, config, epoch, model, optimizer, start_train_time,
+                                             train_iteration_val, train_loader, writer,"Train",t)
+       
         model.eval()
 
-        all_val_acc = 0.0
-        print("start to validate, epoch %d" %(epoch+1))
+        path_val = os.path.join(EMOTION_NET_MODEL_DIR, 'SER_' + str(epoch) + '.pkl')  ## NOTE: where SER_99.pkl comes from
+        with open(path_val, 'wb') as f:
+            pickle.dump(model.state_dict(), f)  ## NOTE: save model parameters
+           
+       
+        # called to tell the testing process is being initiated
+        model.eval()
+
+        print("start to validate, epoch %d" % (epoch + 1))
         with torch.no_grad():
-            for i, (data, label) in enumerate(val_loader):
-                val_iter += 1
+            # testing/validation of the particular set of batches
+            val_iteration_val = train_test_batches_single_epoch(cross_entropy_loss, config, epoch, model, optimizer,start_train_time,val_iteration_val, val_loader, writer, "Test", t)
+            
 
-                data, label = Variable(data.float()), Variable(label.long())
-                label = torch.squeeze(label) ## NOTE: why squeeze
 
-                fake = model(data)
-                loss_t = CroEn_loss(fake,label)
-                val_acc = _compute_accuracy(label, fake)
-
-                writer.add_scalar('Val',loss_t,val_iter)
-
-                all_val_acc += val_acc.item()
-                if (val_iter % 1000 == 0):
-                    print('[%d,%5d / %d] test loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(val_loader), loss_t.item(),time.time()-training_start_time))
-        writer.add_scalar('Val_acc',float(all_val_acc)/(i+1), epoch+1)
-    return
+    
+    
 
 
 # dtw

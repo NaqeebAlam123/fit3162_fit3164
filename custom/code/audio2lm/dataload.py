@@ -18,8 +18,8 @@ DATAROOT = 'data/landmark/'
 
 MEAD = {'angry':0, 'contempt':1, 'disgusted':2, 'fear':3, 'happy':4, 'neutral':5,
         'sad':6, 'surprised':7}
-TRAIN_DIR = './train_M030.pkl'
-VAL_DIR = './val_M030.pkl'
+TRAIN_DIR = 'data/mfcc/M030/basics/train_M030.pkl'
+VAL_DIR = 'data/mfcc/M030/basics/val_M030.pkl'
 
 class SER_MFCC(data.Dataset):
     def __init__(self,
@@ -34,25 +34,24 @@ class SER_MFCC(data.Dataset):
 
         self.train = train
         if(self.train=='train'):
-            file = open(TRAIN_DIR, "rb")
-            self.train_data = pickle.load(file)
-            file.close()
-        if(self.train=='val'):
-            file = open(VAL_DIR, "rb")
-            self.train_data = pickle.load(file)
-            file.close()
+            with open(TRAIN_DIR, "rb") as f:
+                self.train_data=pickle.load(f)
+        elif(self.train=='val'):
+            with open(VAL_DIR, "rb") as f:
+                self.train_data=pickle.load(f)
+        else:
+            print("the provided value for train variable doesn't fit any option")
 
     def __getitem__(self, index):
         emotion = self.train_data[index].split('_')[0]
         label = torch.Tensor([MEAD[emotion]])
-
         mfcc_path = os.path.join(self.data_path ,  self.train_data[index])
-        file = open(mfcc_path,'rb')
-        mfcc = np.load(file)
-        mfcc = mfcc[:,1:]
-        mfcc = torch.FloatTensor(mfcc)
-        mfcc=torch.unsqueeze(mfcc, 0)
-        file.close()
+        with open(mfcc_path,'rb') as f:
+            mfcc = np.load(f)
+        # mfcc = mfcc[:,1:]
+        # mfcc = torch.FloatTensor(mfcc)
+        # mfcc=torch.unsqueeze(mfcc, 0)
+        mfcc=torch.squeeze(torch.FloatTensor(mfcc[:,1:]),0)
         return mfcc, label
 
     def __len__(self):
