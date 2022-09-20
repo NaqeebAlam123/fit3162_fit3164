@@ -1,5 +1,6 @@
 from collections import OrderedDict
 import os
+#from pickle import TRUE
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
@@ -79,45 +80,48 @@ class EmotionNet(nn.Module):
         # )
         
         
-        self.emotion_encoder = nn.Sequential(OrderedDict([
-            ('conv1',conv2d(1,64,3,1,1)),
-            ('pool1',nn.MaxPool2d((1,3), stride=(1,2))), #[1, 64, 12, 12]
-            ('conv2',conv2d(64,128,3,1,1)),
-            ('conv3',conv2d(128,256,3,1,1)),
-            ('pool2',nn.MaxPool2d((12,1), stride=(12,1))), #[1, 256, 1, 12]
-            ('conv4',conv2d(256,512,3,1,1)),
-            ('pool3'.nn.MaxPool2d((1,2), stride=(1,2))) #[1, 512, 1, 6]
-        ]))
+        # self.emotion_encoder = nn.Sequential(OrderedDict([
+        #     ('conv1',conv2d(1,64,3,1,1)),
+        #     ('pool1',nn.MaxPool2d((1,3), stride=(1,2))), #[1, 64, 12, 12]
+        #     ('conv2',conv2d(64,128,3,1,1)),
+        #     ('conv3',conv2d(128,256,3,1,1)),
+        #     ('pool2',nn.MaxPool2d((12,1), stride=(12,1))), #[1, 256, 1, 12]
+        #     ('conv4',conv2d(256,512,3,1,1)),
+        #     ('pool3'.nn.MaxPool2d((1,2), stride=(1,2))) #[1, 512, 1, 6]
+        # ]))
         
         
-        # layers = []
+        layers = []
 
-        # layers.append(conv2d(1,64,3,1,1))
-        # layers.append(nn.MaxPool2d((1,3), stride=(1,2)))  #[1, 64, 12, 12]
-        # layers.append(conv2d(64,128,3,1,1))
-        # layers.append(conv2d(128,256,3,1,1))
-        # layers.append(nn.MaxPool2d((12,1), stride=(12,1))) #[1, 256, 1, 12]
-        # layers.append(conv2d(256,512,3,1,1)) 
-        # layers.append(nn.MaxPool2d((1,2), stride=(1,2)))  #[1, 512, 1, 6]
+        layers.append(conv2d(1,64,3,1,1))
+        layers.append(nn.MaxPool2d((1,3), stride=(1,2)))  #[1, 64, 12, 12]
+        layers.append(conv2d(64,128,3,1,1))
+        layers.append(conv2d(128,256,3,1,1))
+        layers.append(nn.MaxPool2d((12,1), stride=(12,1))) #[1, 256, 1, 12]
+        layers.append(conv2d(256,512,3,1,1)) 
+        layers.append(nn.MaxPool2d((1,2), stride=(1,2)))  #[1, 512, 1, 6]
         
-        # self.emotion_encoder = nn.Sequential(*layers)
+        self.emotion_encoder = nn.Sequential(*layers)
+        layer_1 = []
+        layer_1.append(nn.Linear(512*6,2048))
 
-        self.emotion_encoder_fc_1 =  nn.Linear(512*6,2048), # 512x6 input size, 2048 out_features
-        self.emotion_encoder_fc_2 =  nn.Linear(2048,128), # 2048 input size, 128 out_features
+        self.emotion_encoder_fc_1 = nn.Sequential(*layer_1) 
+        self.emotion_encoder_fc_2 =  nn.Linear(2048,128) # 2048 input size, 128 out_features
         
         self.last_fc = nn.Linear(128,8) # 128 input size, 8 out_features
 
     def forward(self, mfcc):
+        #print(mfcc.shape)
         mfcc=torch.transpose(mfcc,2,3)
         feature = self.emotion_encoder(mfcc)
         feature = feature.view(feature.size(0),-1)
-
-        feature=F.relu(self.emotion_encoder_fc_1(feature),bool=True) # replacement of neg values with a zero
-        x=F.relu(self.emotion_encoder_fc_2(feature),bool=True) # replacement of neg values with a zero
-
+        #print(type(feature))
+        feature=F.relu(self.emotion_encoder_fc_1(feature), inplace= True) # replacement of neg values with a zero
+        x=F.relu(self.emotion_encoder_fc_2(feature), inplace=True) # replacement of neg values with a zero
+        
         #x = self.emotion_encoder_fc(feature)
 
-        return   x
+        return x
 
 
 class Ct_Decoder(nn.Module):

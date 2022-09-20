@@ -148,7 +148,7 @@ def train_EmotionNet(config):
         device_ids = [int(i) for i in config.device_ids.split(',')]
         model = nn.DataParallel(model, device_ids=device_ids).cuda()
         cross_entropy_loss = cross_entropy_loss.cuda()
-        tripletloss = tripletloss.cuda()
+        #tripletloss = tripletloss.cuda()
 
     # initialize weight of model
     _initialize_weights(model)
@@ -163,9 +163,10 @@ def train_EmotionNet(config):
     # template for displaying the loss and other info on terminal
     t=Template('[$epoch,$batch_id / $data_Size] $mode loss :$loss timespent : $time')
     
-    start_train_time = time.clock()
+    start_train_time = time.time()
     for epoch in range(config.max_epochs_val):
         # training of the particular set of batches
+        print('start training of epoch', epoch+1)
         (model,train_iteration_val) = train_test_batches_single_epoch(cross_entropy_loss, config, epoch, model, optimizer, start_train_time,
                                              train_iteration_val, train_loader, writer,"Train",t)
        

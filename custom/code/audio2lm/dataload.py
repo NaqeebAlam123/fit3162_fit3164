@@ -30,7 +30,7 @@ class SER_MFCC(data.Dataset):
       #  self.train_data = pickle.load(file)
       #  file.close()
 
-        self.data_path = dataset_dir
+        self.data_path = os.path.join(dataset_dir, 'generated_mfcc')
 
         self.train = train
         if(self.train=='train'):
@@ -45,13 +45,15 @@ class SER_MFCC(data.Dataset):
     def __getitem__(self, index):
         emotion = self.train_data[index].split('_')[0]
         label = torch.Tensor([MEAD[emotion]])
+
         mfcc_path = os.path.join(self.data_path ,  self.train_data[index])
         with open(mfcc_path,'rb') as f:
             mfcc = np.load(f)
-        # mfcc = mfcc[:,1:]
-        # mfcc = torch.FloatTensor(mfcc)
-        # mfcc=torch.unsqueeze(mfcc, 0)
-        mfcc=torch.squeeze(torch.FloatTensor(mfcc[:,1:]),0)
+        mfcc = mfcc[:,1:]
+        mfcc = torch.FloatTensor(mfcc)
+        mfcc=torch.unsqueeze(mfcc, 0)
+        
+        #mfcc=torch.squeeze(torch.FloatTensor(mfcc[:,1:]),0)
         return mfcc, label
 
     def __len__(self):

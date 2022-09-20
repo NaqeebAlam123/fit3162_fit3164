@@ -10,10 +10,7 @@ AUDIO_DATA = 'data/audio/M030_wav'
 MFCC_OUTPUT = 'data/mfcc/M030/generated_mfcc'
 
 
-# AUDIO_DATA = 'custom/data/audio/M030_wav'
-# MFCC_OUTPUT = 'custom/data/mfcc/M030/generated_mfcc'
-
-def _audio2mfcc(audio_file, save,test_identifier=False):
+def audio_to_mfcc_representation(audio_file, save,test_identifier=False):
     if os.path.exists(audio_file):
       speech, sr = librosa.load(audio_file, sr=16000)
     else:
@@ -21,6 +18,7 @@ def _audio2mfcc(audio_file, save,test_identifier=False):
 
     # speech = np.insert(speech, 0, np.zeros(1920)) ## NOTE: 1920 zeros in front
     # speech = np.append(speech, np.zeros(1920)) ## NOTE: 1920 zeros after last position
+    
     mfcc = python_speech_features.mfcc(speech,16000,winstep=0.01)
     time_len = mfcc.shape[0]
     if test_identifier:
@@ -58,7 +56,7 @@ def main(audio_file,mfcc_path,test_identifier=False):
                     raise PathNotFoundError(audio_file_path,"Path is leading into an incorrect file",4)
                  index = file.split('.')[0]
                  save_path = os.path.join(mfcc_path, emotion_names[emotion_num] + '_' + index)
-                 _audio2mfcc(audio_file_path, save_path,test_identifier)
+                 audio_to_mfcc_representation(audio_file_path, save_path,test_identifier)
              emotion_num=emotion_num+1
         except StopIteration:
             Continue_iteration=False
@@ -79,12 +77,15 @@ def main(audio_file,mfcc_path,test_identifier=False):
         index += 1
     print('end')
 
-    os.makedirs('data/mfcc/M030/basics')
+    print('dumping of training and validation set')
+    print('start')
+    if not os.path.exists('data/mfcc/M030/basics'):
+        os.makedirs('data/mfcc/M030/basics')
     with open('data/mfcc/M030/basics/train_M030.pkl', 'wb') as f:
         pickle.dump(train_list, f)
     with open('data/mfcc/M030/basics/val_M030.pkl', 'wb') as f:
         pickle.dump(val_list, f)
-
+    print('end')
    
     # print(train_list==train_list_x)
     # print(val_list==val_list_x)
@@ -93,13 +94,9 @@ def main(audio_file,mfcc_path,test_identifier=False):
 if __name__ == '__main__':
     AUDIO_DATA = 'data/audio/M030_wav'
     MFCC_OUTPUT = 'data/mfcc/M030/generated_mfcc'
-    # with open('custom/data/mfcc/M030/basics/val_M030.pkl', 'rb') as f:
-    #     data=pickle.load(f)
-    # for l in data:
-    #     x=l.split('/')[0]
-    #     if int(x.split('_')[1])>10:
-    #         print('error')
-    # print(data)
+    
+    if not os.path.exists(MFCC_OUTPUT):
+        os.makedirs(MFCC_OUTPUT)
     try:
      main(AUDIO_DATA,MFCC_OUTPUT,False)
     except PathNotFoundError as e:
