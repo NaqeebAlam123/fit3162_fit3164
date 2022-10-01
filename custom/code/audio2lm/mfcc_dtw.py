@@ -86,60 +86,85 @@ line_M030.append(line_11)
 line_M030.append(line_12)
 line_M030.append(line_13)
 
+def dtw():
+    """
+    Given different emotional audio files and with same user speaking the same thing at possibly different points in time makes it difficult to encode
+    content inside those audios.the goal of dynamic time warping and this function is to align two sequences of features vectors by warping the time axis repeatitively
+    until optimal match is found.
+    In regards to implementation of dtw itself,pairwaise comparison is done with angry emotional audio files used as reference for alignment of audios.Euclidean distance is calculated
+    between two sequences is used to find the best match that minimizes overall distance.the process can be classified as something recursive as
+    it needs through several paths in order to find a route that can decrease the overall distance.
+    """
+    # traverse every line of paths referring to similar audio files but with different emotions
+    for i in range(0,13):
+        m = line_M030[i]
+        # creating path for alinged audio data
+        aligned_audio = ALIGNED_AUDIO_DATA +str(i)
+        if not os.path.exists(aligned_audio):
+            os.makedirs(aligned_audio)
+        for j in range(0,8):
+            # creating path for audio file that needs to be extracted
+            audio_path = AUDIO_DATA+MEAD[j]+'/'+m[j]+'.wav'
+            # retrieve mfcc features of angry emotion audio files and save feature vectors in a file
+            if(j == 0):
+                # load audio files
+                y1, sr1 = librosa.load(audio_path,sr=16000)
+                # insert zeros at the end and the back
+                y1 = np.insert(y1, 0, np.zeros(1920))
+                y1 = np.append(y1, np.zeros(1920))
+                # get mfcc features and store in a file
+                mfcc = python_speech_features.mfcc(y1, sr1, winstep=sample_interval)
+                with open(aligned_audio+'/0.pkl', 'wb') as f:
+                    pickle.dump(mfcc, f)
+            # compare newly genearted mfcc features for emotions other than angry with the stored one
+            else:
+                f = open(os.path.join(aligned_audio,'0.pkl'),'rb')
+                mfcc1 = pickle.load(f)
+                # load audio files
+                y2, sr2 = librosa.load(audio_path, sr=16000)
+                # insert zeros at the end and the back
+                y2 = np.insert(y2, 0, np.zeros(1920))
+                y2 = np.append(y2, np.zeros(1920))
+                # get mfcc features
+                mfcc2 = python_speech_features.mfcc(y2, sr2, winstep=sample_interval)
+                # compare newly generated mfccs with stored one using dtw and get the best possible path
+                _, _, _, path = dtw(mfcc2, mfcc1, dist=lambda x, y: norm(x - y, ord=1))
+                # angry emotion mfcc features are stored in this variable
+                mfcc2_n = mfcc1
+                # if we denote mfcc1 to be x and mfcc2 to be y,the path[0] will store the x coordinates and path[1] will store the y coordinates
+                # Using the path coordinates ,we can assign mfcc2 values to our aligned feature vector which is mfcc2_n
+                a = path[0]
+                b = path[1]
+                for l in range(1,len(path[0])):
+                    mfcc2_n[b[l]] = mfcc2[a[l]]
+                # store the mfcc features into a file
+                with open(os.path.join(aligned_audio,str(j)+'.pkl'), 'wb') as f:
+                    pickle.dump(mfcc2_n, f)
+            print(i,j)
 
-for i in range(0,13):
-    m = line_M030[i]
-    aligned_audio = f'{ALIGNED_AUDIO_DATA}{str(i)}'
-    if not os.path.exists(aligned_audio):
-        os.makedirs(aligned_audio)
-    for j in range(0,8):
-        audio_path = f'{AUDIO_DATA}{MEAD[j]}/{m[j]}.wav'
-        if(j == 0):
-            y1, sr1 = librosa.load(audio_path,sr=16000)
-            y1 = np.insert(y1, 0, np.zeros(1920))
-            y1 = np.append(y1, np.zeros(1920))
-            mfcc = python_speech_features.mfcc(y1, sr1, winstep=sample_interval)
-            with open(aligned_audio+'/0.pkl', 'wb') as f:
-                pickle.dump(mfcc, f)
-        else:
-            f = open(os.path.join(aligned_audio,'0.pkl'),'rb')
-            mfcc1 = pickle.load(f)
-            y2, sr2 = librosa.load(audio_path, sr=16000)
-            y2 = np.insert(y2, 0, np.zeros(1920))
-            y2 = np.append(y2, np.zeros(1920))
-            mfcc2 = python_speech_features.mfcc(y2, sr2, winstep=sample_interval)
-            _, _, _, path = dtw(mfcc2, mfcc1, dist=lambda x, y: norm(x - y, ord=1))
 
-            # plt.imshow(cost.T, origin='lower', cmap=plt.cm.gray, interpolation='nearest')
-            # plt.plot(path[0], path[1], 'w')
-            # plt.xlim((-0.5, cost.shape[0]-0.5))
-            # plt.ylim((-0.5, cost.shape[1]-0.5))
-            mfcc2_n = mfcc1
-            # mfcc2_n[0]=mfcc2[0]
-            a = path[0]
-            b = path[1]
-            for l in range(1,len(path[0])):
-                mfcc2_n[b[l]] = mfcc2[a[l]]
-            with open(os.path.join(aligned_audio,str(j)+'.pkl'), 'wb') as f:
-                pickle.dump(mfcc2_n, f)
-        print(i,j)
+    for i in range(8):
+        aligned_audio = EMOTION_LENGTH_OUTPUT+str(i)
+        if not os.path.exists(aligned_audio):
+            os.makedirs(aligned_audio)
+        for j in range(13):
+            f = open(ALIGNED_AUDIO_DATA+str(j)+'/'+str(i)+'.pkl','rb')
+            mfcc = pickle.load(f)
+            f.close()
+            time_len = mfcc.shape[0]
+            length = 0
+            # Since there are so many mfcc features, 28 sized window is rolled over all mfcc features to combine all
+            # mfcc features inside the domain of the window into a single file.The window is pushed four positions ahead each time
+            for input_idx in range(int((time_len-28)/4)+1):
+                input_feat = mfcc[4*input_idx:4*input_idx+sample_len,:]
+                with open(os.path.join(aligned_audio, str(length)+'.pkl'), 'wb') as f:
+                    pickle.dump(input_feat, f)
+                length += 1
 
+if __name__ == '__main__':
 
-for i in range(8):
-    aligned_audio = f'{EMOTION_LENGTH_OUTPUT}{str(i)}'
-    if not os.path.exists(aligned_audio):
-        os.makedirs(aligned_audio)
-    for j in range(13):
-        f = open(f'{ALIGNED_AUDIO_DATA}{str(j)}/{str(i)}.pkl','rb')
-        mfcc = pickle.load(f)
-        f.close()
-        time_len = mfcc.shape[0]
-        length = 0
-        for input_idx in range(int((time_len-28)/4)+1):
-            input_feat = mfcc[4*input_idx:4*input_idx+sample_len,:]
-            with open(os.path.join(aligned_audio, str(length)+'.pkl'), 'wb') as f:
-                pickle.dump(input_feat, f)
-            length += 1
+    dtw()
+
 
 '''
 #test
