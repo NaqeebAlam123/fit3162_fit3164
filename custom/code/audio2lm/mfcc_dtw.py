@@ -92,7 +92,7 @@ for i in range(0,13):
     aligned_audio = f'{ALIGNED_AUDIO_DATA}{str(i)}'
     if not os.path.exists(aligned_audio):
         os.makedirs(aligned_audio)
-    for j in range(0,8):
+    for j in range(0,len(m)):
         audio_path = f'{AUDIO_DATA}{MEAD[j]}/{m[j]}.wav'
         if(j == 0):
             y1, sr1 = librosa.load(audio_path,sr=16000)

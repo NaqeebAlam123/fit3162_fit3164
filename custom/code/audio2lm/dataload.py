@@ -60,19 +60,13 @@ class SER_MFCC(data.Dataset):
 
 
 class GET_MFCC(data.Dataset):
-    def __init__(self,
-                 dataset_dir,phase):
-
+    def __init__(self, dataset_dir,phase):
         self.data_path = dataset_dir
-        self.phase = phase
-
-        self.emo_number = [0,1,2,3,4,5,6,7]
-        # print(len(os.path.dirname(dataset_dir+'0/')), os.path.dirname(dataset_dir+'0/'))
+        self.emo_number = sorted(list(MEAD.values()))
         if phase == 'test':
-            self.con_number = [i for i in range(len(os.listdir(dataset_dir+'0/')))]
+            self.con_number = [i for i in range(int(0.15*len(os.pathdir(dataset_dir+'0/'))))]
         elif phase == 'train':
-            self.con_number = [i for i in range(len(os.listdir(dataset_dir+'0/')))]
-
+            self.con_number = [i for i in range(int(0.15*len(os.pathdir(dataset_dir+'0/'))),len(os.pathdir(dataset_dir+'0/')))]
 
 
     def __getitem__(self, index): # build pseudo-training pairs
@@ -124,7 +118,6 @@ class GET_MFCC(data.Dataset):
         mfcc32 = torch.FloatTensor(mfcc32[:,1:])
         f.close()
 
-
         mfcc11=torch.unsqueeze(mfcc11, 0)
         mfcc21=torch.unsqueeze(mfcc21, 0)
         mfcc12=torch.unsqueeze(mfcc12, 0)
@@ -147,7 +140,6 @@ class GET_MFCC(data.Dataset):
               }
 
     def __len__(self):
-       # return self.all_number * len(self.emo_number)
         return len(self.con_number) * len(self.emo_number)
 
 

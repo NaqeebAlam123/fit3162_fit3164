@@ -51,22 +51,29 @@ def _compute_accuracy(input_label, out):
     return acc
 
 
-# def _log(file_handle, epoch, len_train_loader, loss):
-#     ...
-#     pass
+def _log_train_EmotionNet(epoch, iteration, len_train_loader, loss, training_start_time):
+    with open(EMOTION_NET_LOG_DIR + 'train.txt','a') as file_handle:
+        file_handle.write(
+            f'[{epoch+1}, {iteration+1} / {len_train_loader}] train loss : {loss.item()} time spent: {time.time()-training_start_time} s\n')
+
+
+def _log_val_EmotionNet(epoch, iteration, len_train_loader, loss, training_start_time):
+    with open(EMOTION_NET_LOG_DIR + 'val.txt','a') as file_handle:
+        file_handle.write(
+            f'[{epoch+1}, {iteration+1} / {len_train_loader}] train loss : {loss.item()} time spent: {time.time()-training_start_time} s\n')
 
 
 # emotion_pretrain
 def train_EmotionNet(config):
     '''
     input: mfcc data
-    output: SER_99.pkl
+    output: SER_xx.pkl
     '''
     os.makedirs(EMOTION_NET_MODEL_DIR, exist_ok = True)
 
     #------- 1. Load model -------#
     model = EmotionNet()
-    CroEn_loss =  nn.CrossEntropyLoss()
+    CroEn_loss =  nn.CrossEntropyLoss().cuda()
     _initialize_weights(model)
     opt_m = torch.optim.Adam(model.parameters(), lr=config.lr, betas=(config.beta1, config.beta2))
 
@@ -94,7 +101,7 @@ def train_EmotionNet(config):
             train_iter += 1
 
             data, label = Variable(data.float()), Variable(label.long())
-            label = torch.squeeze(label)
+            label = torch.squeeze(label).cuda()
 
             fake = model(data)
             loss = CroEn_loss(fake,label)
@@ -108,7 +115,8 @@ def train_EmotionNet(config):
             all_acc += acc.item()
 
             if (train_iter % 1000 == 0):
-                print('[%d,%5d / %d] train loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(train_loader), loss.item(),time.time()-training_start_time))
+                # print('[%d,%5d / %d] train loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(train_loader), loss.item(),time.time()-training_start_time))
+                _log_train_EmotionNet(epoch=epoch, iteration=i, len_train_loader=len(train_loader), training_start_time=training_start_time, loss=loss)
 
         writer.add_scalar('Train_acc',float(all_acc)/(i+1),epoch+1)
 
@@ -124,7 +132,7 @@ def train_EmotionNet(config):
                 val_iter += 1
 
                 data, label = Variable(data.float()), Variable(label.long())
-                label = torch.squeeze(label) ## NOTE: why squeeze
+                label = torch.squeeze(label).cuda()
 
                 fake = model(data)
                 loss_t = CroEn_loss(fake,label)
@@ -134,7 +142,8 @@ def train_EmotionNet(config):
 
                 all_val_acc += val_acc.item()
                 if (val_iter % 1000 == 0):
-                    print('[%d,%5d / %d] test loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(val_loader), loss_t.item(),time.time()-training_start_time))
+                    # print('[%d,%5d / %d] test loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(val_loader), loss_t.item(),time.time()-training_start_time))
+                    _log_val_EmotionNet(epoch=epoch, iteration=i, len_train_loader=len(val_loader), training_start_time=training_start_time, loss=loss_t)
         writer.add_scalar('Val_acc',float(all_val_acc)/(i+1), epoch+1)
     return
 
@@ -153,48 +162,47 @@ def train_AutoEncoder2x(config):
 
     _initialize_weights(model)
 
-    if config.pretrain:
-        # ATnet resume
-        pretrain = torch.load(ATPRETRAINED_DIR, map_location=torch.device('cpu'))
-        tgt_state = model.state_dict()
-        strip = 'module.'
-        for name, param in pretrain.items():
-            if strip is not None and name.startswith(strip):
-                name = name[len(strip):]
-                name = 'con_encoder.'+name
-            if name not in tgt_state:
-                continue
-            if isinstance(param, nn.Parameter):
-                param = param.data
+    #------- 1.1 Load pretrained CT_encoder -------#
+    pretrain = torch.load(ATPRETRAINED_DIR, map_location=torch.device('cpu'))
+    tgt_state = model.state_dict()
+    strip = 'module.'
+    for name, param in pretrain.items():
+        if strip is not None and name.startswith(strip):
+            name = name[len(strip):]
+            name = 'con_encoder.'+name
+        if name not in tgt_state:
+            continue
+        if isinstance(param, nn.Parameter):
+            param = param.data
+        tgt_state[name].copy_(param)
+
+    # SER resume
+    pretrain = torch.load(SERPRETRAINED_DIR)
+    # tgt_state = model.state_dict()
+
+    strip = 'module.'
+    for name, param in pretrain.items():
+        if strip is not None and name.startswith(strip):
+            name = name[len(strip):]
+            name = 'emo_encoder.'+name
+        if name not in tgt_state:
+            continue
+        if isinstance(param, nn.Parameter):
+            param = param.data
+        if name in tgt_state:
             tgt_state[name].copy_(param)
 
-        # SER resume
-        pretrain = torch.load(SERPRETRAINED_DIR)
-        # tgt_state = model.state_dict()
-
-        strip = 'module.'
-        for name, param in pretrain.items():
-            if strip is not None and name.startswith(strip):
-                name = name[len(strip):]
-                name = 'emo_encoder.'+name
-            if name not in tgt_state:
-                continue
-            if isinstance(param, nn.Parameter):
-                param = param.data
-            if name in tgt_state:
-                tgt_state[name].copy_(param)
-
-        strip = 'module.'
-        for name, param in pretrain.items():
-            if strip is not None and name.startswith(strip):
-                name = name[len(strip):]
-                name = 'classify.'+name
-            if name not in tgt_state:
-                continue
-            if isinstance(param, nn.Parameter):
-                param = param.data
-            if name in tgt_state:
-                tgt_state[name].copy_(param)
+    strip = 'module.'
+    for name, param in pretrain.items():
+        if strip is not None and name.startswith(strip):
+            name = name[len(strip):]
+            name = 'classify.'+name
+        if name not in tgt_state:
+            continue
+        if isinstance(param, nn.Parameter):
+            param = param.data
+        if name in tgt_state:
+            tgt_state[name].copy_(param)
 
     #------- 2. Load training data -------#
     print('start split')
@@ -310,8 +318,7 @@ def train_AutoEncoder2x(config):
                     model.save_fig(data,outputs,save_path)
 
                     with open(AUTOENCODER_2X_LOG_DIR + 'val.txt','a') as file_handle:
-                        file_handle.write('[%d,%5d / %d] con_feature loss :%.10f cla_1 loss :%.10f val loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(test_loader), losses['con_feature'].item(),losses['cla_1'].item(),loss.item(),time.time()-a))
-                        file_handle.write('\n')
+                        file_handle.write('[%d,%5d / %d] con_feature loss :%.10f cla_1 loss :%.10f val loss :%.10f time spent: %f s \n' %(epoch + 1, i+1, len(test_loader), losses['con_feature'].item(),losses['cla_1'].item(),loss.item(),time.time()-a))
 
                 val_iter += 1
                 writer.add_scalar('acc_1_v',float(acc_1_v)/ (i+1), epoch+1)
