@@ -13,7 +13,7 @@ from config import config
 
 import python_speech_features
 import random
-from constants import LANDMARK_BASICS, LM_ENCODER_MODEL_DIR, AUDIO_DATASET
+from constants import LANDMARK_BASICS, LM_ENCODER_MODEL_DIR, AUDIO_DATASET, DEVICE
 
 LANDMARK_POINTS = 68
 FRAME_WIDTH, FRAME_HEIGHT = 256, 256
@@ -181,14 +181,14 @@ def process_mfcc(mfcc):
     ind = 3
     while ind <= int(mfcc.shape[0]/4) - 4:
         t_mfcc = mfcc[(ind - 3)*4: (ind + 4)*4, 1:]
-        t_mfcc = torch.FloatTensor(t_mfcc).cuda()
+        t_mfcc = torch.FloatTensor(t_mfcc).to(DEVICE)
         processed_mfcc.append(t_mfcc)
         ind += 1
     processed_mfcc = torch.stack(processed_mfcc, dim=0)
     return processed_mfcc
-
+# surprised
 audio_file = f'{AUDIO_DATASET}neutral/001.wav' ## TODO
-emo_audio_file = f'{AUDIO_DATASET}happy/001.wav' ## TODO
+emo_audio_file = f'{AUDIO_DATASET}surprised/001.wav' ## TODO
 
 with torch.no_grad():
     # load model
@@ -197,14 +197,14 @@ with torch.no_grad():
     encoder.eval()
 
     # load landmark
-    pca = torch.FloatTensor(get_pca()[:,:16]).cuda()
-    mean = torch.FloatTensor(get_mean()).cuda()
+    pca = torch.FloatTensor(get_pca()[:,:16]).to(DEVICE)
+    mean = torch.FloatTensor(get_mean()).to(DEVICE)
 
     landmark = get_mean()
     landmark = landmark.reshape(LANDMARK_POINTS,2)  #150*2 
     landmark =  landmark.reshape((1,landmark.shape[0]* landmark.shape[1])) #1.300
 
-    landmark = Variable(torch.FloatTensor(landmark.astype(float)) ).cuda()
+    landmark = Variable(torch.FloatTensor(landmark.astype(float)) ).to(DEVICE)
 
     landmark  = landmark - mean.expand_as(landmark)
     landmark = torch.mm(landmark,  pca)
@@ -217,6 +217,7 @@ with torch.no_grad():
     mfcc_emo = load_speech_and_extract_feature(emo_audio_file) ## NOTE
     emo_mfcc = process_mfcc(mfcc_emo)
     print(emo_mfcc.shape, input_mfcc.shape)
+    
     # trim for equal size
     if(emo_mfcc.size(0) > input_mfcc.size(0)):
         emo_mfcc = emo_mfcc[:input_mfcc.size(0),:,:]
@@ -228,7 +229,7 @@ with torch.no_grad():
     print(emo_mfcc.shape, input_mfcc.shape)
     input_mfcc = input_mfcc.unsqueeze(0)
     emo_mfcc = emo_mfcc.unsqueeze(0)
-    fake_lmark = encoder(landmark.cuda(), input_mfcc.cuda(), emo_mfcc.cuda())
+    fake_lmark = encoder(landmark.to(DEVICE), input_mfcc.to(DEVICE), emo_mfcc.to(DEVICE))
     fake_lmark = fake_lmark.view(fake_lmark.size(0)*fake_lmark.size(1) , 16)
 
 ## TODO post process

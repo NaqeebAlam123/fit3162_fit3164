@@ -73,7 +73,7 @@ def train_EmotionNet(config):
 
     #------- 1. Load model -------#
     model = EmotionNet()
-    CroEn_loss =  nn.CrossEntropyLoss().cuda()
+    CroEn_loss =  nn.CrossEntropyLoss().to(DEVICE)
     _initialize_weights(model)
     opt_m = torch.optim.Adam(model.parameters(), lr=config.lr, betas=(config.beta1, config.beta2))
 
@@ -101,7 +101,7 @@ def train_EmotionNet(config):
             train_iter += 1
 
             data, label = Variable(data.float()), Variable(label.long())
-            label = torch.squeeze(label).cuda()
+            label = torch.squeeze(label).to(DEVICE)
 
             fake = model(data)
             loss = CroEn_loss(fake,label)
@@ -132,7 +132,7 @@ def train_EmotionNet(config):
                 val_iter += 1
 
                 data, label = Variable(data.float()), Variable(label.long())
-                label = torch.squeeze(label).cuda()
+                label = torch.squeeze(label).to(DEVICE)
 
                 fake = model(data)
                 loss_t = CroEn_loss(fake,label)
@@ -158,7 +158,7 @@ def train_AutoEncoder2x(config):
     #CroEn_loss =  nn.CrossEntropyLoss()
     if config.cuda:
         device_ids = [int(i) for i in config.device_ids.split(',')]
-        model = model.cuda()
+        model = model.to(DEVICE)
 
     _initialize_weights(model)
 
@@ -241,7 +241,7 @@ def train_AutoEncoder2x(config):
         acc_2 = 0.0
 
         for i, data in enumerate(train_loader):
-            # data = Variable(data.float().cuda())
+            # data = Variable(data.float().to(DEVICE))
             iter_start_time = time.time()
             outputs, losses, acces = model.train_func(data)
             losses_values = {k:v.item() for k, v in losses.items()}
@@ -357,7 +357,7 @@ def train_AT_Emotion(config):
     generator = AT_emotion(config)
     if config.cuda:
         device_ids = [int(i) for i in config.device_ids.split(',')]
-        generator = generator.cuda()
+        generator = generator.to(DEVICE)
 
     #initialize_weights(generator)
 
@@ -438,9 +438,9 @@ def train_AT_Emotion(config):
             t1 = time.time()
 
             if config.cuda:
-                lmark    = Variable(lmark.float()).cuda()
-                mfccs = Variable(mfccs.float()).cuda()
-                example_landmark = Variable(example_landmark.float()).cuda()
+                lmark    = Variable(lmark.float()).to(DEVICE)
+                mfccs = Variable(mfccs.float()).to(DEVICE)
+                example_landmark = Variable(example_landmark.float()).to(DEVICE)
 
             fake_lmark, loss_pca, loss_lm= generator.train_func(example_landmark, lmark, mfccs)
 
@@ -478,9 +478,9 @@ def train_AT_Emotion(config):
         for step, (example_landmark, example_audio, lmark, mfccs) in enumerate(test_loader):
             with torch.no_grad():
                 if config.cuda:
-                    lmark    = Variable(lmark.float().cuda())
-                    mfccs = Variable(mfccs.float().cuda())
-                    example_landmark = Variable(example_landmark.float().cuda())
+                    lmark    = Variable(lmark.float().to(DEVICE))
+                    mfccs = Variable(mfccs.float().to(DEVICE))
+                    example_landmark = Variable(example_landmark.float().to(DEVICE))
 
                 fake_lmark,loss_pca, loss_lm= generator.val_func( example_landmark, lmark, mfccs)
 

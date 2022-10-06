@@ -6,7 +6,7 @@ from ops import conv2d
 import torchvision.models as models
 import numpy as np
 import seaborn as sns
-from constants import LANDMARK_BASICS
+from constants import LANDMARK_BASICS, DEVICE
 
 class Flatten(nn.Module):
     def forward(self, input):
@@ -21,7 +21,7 @@ class Lm_encoder(nn.Module):
             nn.ReLU(True),
             nn.Linear(256,512),
             nn.ReLU(True),
-        ).cuda()
+        ).to(DEVICE)
 
     def forward(self, example_landmark):
         # print('lm_encoder', example_landmark.get_device())
@@ -40,17 +40,17 @@ class Ct_encoder(nn.Module):
             conv2d(256,256,3,1,1),
             conv2d(256,512,3,1,1),
             nn.MaxPool2d(3, stride=(2,2))
-        ).cuda()
+        ).to(DEVICE)
         self.audio_encoder_fc = nn.Sequential(
             nn.Linear(1024 *12,2048),
             nn.ReLU(True),
             nn.Linear(2048,256),
             nn.ReLU(True),
-        ).cuda()
+        ).to(DEVICE)
 
     def forward(self, audio):
         # print('ct_encoder', audio.get_device())
-        feature = self.audio_encoder(audio.cuda())
+        feature = self.audio_encoder(audio.to(DEVICE))
         feature = feature.view(feature.size(0),-1)
         x = self.audio_encoder_fc(feature)
         return x
@@ -67,18 +67,18 @@ class EmotionNet(nn.Module):
             nn.MaxPool2d((12,1), stride=(12,1)), #[1, 256, 1, 12]
             conv2d(256,512,3,1,1),
             nn.MaxPool2d((1,2), stride=(1,2)) #[1, 512, 1, 6]
-        ).cuda()
+        ).to(DEVICE)
         self.emotion_encoder_fc = nn.Sequential(
             nn.Linear(512*6,2048),
             nn.ReLU(True),
             nn.Linear(2048,128),
             nn.ReLU(True),
-        ).cuda()
-        self.last_fc = nn.Linear(128,8).cuda()
+        ).to(DEVICE)
+        self.last_fc = nn.Linear(128,8).to(DEVICE)
 
     def forward(self, mfcc):
         mfcc=torch.transpose(mfcc,2,3)
-        feature = self.emotion_encoder(mfcc.cuda())
+        feature = self.emotion_encoder(mfcc.to(DEVICE))
         feature = feature.view(feature.size(0),-1)
         x = self.emotion_encoder_fc(feature)
         if self.training:
@@ -154,16 +154,16 @@ class AutoEncoder2x(nn.Module):
 
     def cross(self, x1, x2, x3, x4): # called in process()
         self.emo_encoder.eval()
-        c1 = self.con_encoder(x1.cuda())
-        c2 = self.con_encoder(x4.cuda())
+        c1 = self.con_encoder(x1.to(DEVICE))
+        c2 = self.con_encoder(x4.to(DEVICE))
 
-        e1 = self.emo_encoder(x2.cuda())
-        e2 = self.emo_encoder(x3.cuda())
+        e1 = self.emo_encoder(x2.to(DEVICE))
+        e2 = self.emo_encoder(x3.to(DEVICE))
 
-        out1 = self.decoder(c1.cuda(),e1.cuda())
-        out2 = self.decoder(c1.cuda(),e2.cuda())
-        out3 = self.decoder(c2.cuda(),e1.cuda())
-        out4 = self.decoder(c2.cuda(),e2.cuda())
+        out1 = self.decoder(c1.to(DEVICE),e1.to(DEVICE))
+        out2 = self.decoder(c1.to(DEVICE),e2.to(DEVICE))
+        out3 = self.decoder(c2.to(DEVICE),e1.to(DEVICE))
+        out4 = self.decoder(c2.to(DEVICE),e2.to(DEVICE))
 
         return out1, out2, out3, out4
 
@@ -228,7 +228,7 @@ class AutoEncoder2x(nn.Module):
 
         for i, target in enumerate(targets):
             try:
-                losses['rec' + self.targets_name[i][6:]] = self.l1loss(outputs[i], target.cuda())
+                losses['rec' + self.targets_name[i][6:]] = self.l1loss(outputs[i], target.to(DEVICE))
             except Exception as e:
                 import ipdb
                 ipdb.set_trace()
@@ -241,12 +241,12 @@ class AutoEncoder2x(nn.Module):
         losses['con_feature'] = self.l1loss(c1, c2)
 
         label1 = labels[0]
-        label1=torch.squeeze(label1).cuda()
+        label1=torch.squeeze(label1).to(DEVICE)
         label2 = labels[1]
-        label2=torch.squeeze(label2).cuda()
+        label2=torch.squeeze(label2).to(DEVICE)
 
-        fake1 = self.classify(e1).cuda()
-        fake2 = self.classify(e2).cuda()
+        fake1 = self.classify(e1).to(DEVICE)
+        fake2 = self.classify(e2).to(DEVICE)
 
         losses['cla_1'] = self.CroEn_loss(fake1,label1)
         losses['cla_2'] = self.CroEn_loss(fake2,label2)
@@ -346,15 +346,15 @@ class AutoEncoder2x(nn.Module):
 class Decoder(nn.Module):
     def __init__(self):
         super(Decoder, self).__init__()
-        self.lstm = nn.LSTM(128*7,256,3,batch_first = True).cuda()
+        self.lstm = nn.LSTM(128*7,256,3,batch_first = True).to(DEVICE)
         self.lstm_fc = nn.Sequential(
             nn.Linear(256,16),#20
-        ).cuda()
+        ).to(DEVICE)
 
     def forward(self, lstm_input):
         print(lstm_input.shape)
-        hidden = ( torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256).cuda()),# torch.Size([3, 16, 256])
-                      torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256).cuda()))# torch.Size([3, 16, 256])
+        hidden = ( torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256).to(DEVICE)),# torch.Size([3, 16, 256])
+                      torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256).to(DEVICE)))# torch.Size([3, 16, 256])
         print(hidden[0].shape, hidden[1].shape)
 
         lstm_out, _ = self.lstm(lstm_input, hidden) #torch.Size([16, 16, 256])
@@ -383,8 +383,8 @@ class AT_emotion(nn.Module):
         # self.pca = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}U_68.npy')[:, :16])
         # self.mean = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}mean_68.npy'))
 
-        self.pca = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}U_68.npy')[:, :16]).cuda()
-        self.mean = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}mean_68.npy')).cuda()
+        self.pca = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}U_68.npy')[:, :16]).to(DEVICE)
+        self.mean = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}mean_68.npy')).to(DEVICE)
 
 
         self.optimizer = torch.optim.Adam(list(self.con_encoder.parameters())
@@ -434,7 +434,7 @@ class AT_emotion(nn.Module):
 
     def forward(self, example_landmark, mfccs,emo_mfcc):
         self.emo_encoder.eval()
-        l = self.lm_encoder(example_landmark.cuda())
+        l = self.lm_encoder(example_landmark.to(DEVICE))
         lstm_input = []
 
         for step_t in range(mfccs.size(1)): #16 torch.Size([16, 16, 28, 12])

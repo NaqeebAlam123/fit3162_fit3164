@@ -3,10 +3,10 @@
 import os
 from pydub import AudioSegment
 
-AUDIO_FOLDER = '../../data/audio/M030 copy'
+AUDIO_FOLDER = '../../data/audio/M011_wav'
 
 def main():
-    os.remove(f'{AUDIO_FOLDER}/.DS_Store')
+    # os.remove(f'{AUDIO_FOLDER}/.DS_Store')
     formats_to_convert = ('.m4a',)
     for sub_dir in os.listdir(AUDIO_FOLDER):
         for org_audio_filename in os.listdir(os.path.join(AUDIO_FOLDER, sub_dir)):
@@ -26,7 +26,8 @@ def main():
 
                     track.export(wav_path, format='wav')
                     os.remove(_path)
-                except:
+                except Exception as e:
+                    print(e)
                     print("ERROR CONVERTING " + str(_path))
     return
 
