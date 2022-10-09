@@ -1,6 +1,6 @@
 import unittest
 import facial_landmarks as fl
-from facial_landmarks import PathNotFoundError,InvalidNumberofFrames
+from Exceptions_Classes import *
 import dlib
 from unittest.mock import patch
 import numpy as np
