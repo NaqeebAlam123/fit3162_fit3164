@@ -8,3 +8,9 @@ class PathNotFoundError(Exception):
     def __str__(self):
         message=self.message+ " \n Path Defined : "+self.path +"\n Error code : "+ str(self.error_code)
         return message
+
+
+
+
+class InvalidNumberofFrames(Exception):
+    pass
