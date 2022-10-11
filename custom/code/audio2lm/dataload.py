@@ -11,15 +11,15 @@ from torch.nn.functional import pad
 import librosa
 import time
 import copy
-from constants import LANDMARK_BASICS, LM_ENCODER_DATASET_MFCC_DIR, LM_ENCODER_DATASET_LANDMARK_DIR
+from constants import LANDMARK_BASICS, LM_ENCODER_DATASET_MFCC_DIR, LM_ENCODER_DATASET_LANDMARK_DIR, ACTOR
 
 DATAROOT = 'data/landmark/'
 
 
 MEAD = {'angry':0, 'contempt':1, 'disgusted':2, 'fear':3, 'happy':4, 'neutral':5,
         'sad':6, 'surprised':7}
-TRAIN_DIR = './train_M030.pkl'
-VAL_DIR = './val_M030.pkl'
+TRAIN_DIR = f'./train_{ACTOR}.pkl'
+VAL_DIR = f'./val_{ACTOR}.pkl'
 
 class SER_MFCC(data.Dataset):
     def __init__(self,
@@ -63,10 +63,12 @@ class GET_MFCC(data.Dataset):
     def __init__(self, dataset_dir,phase):
         self.data_path = dataset_dir
         self.emo_number = sorted(list(MEAD.values()))
-        if phase == 'test':
-            self.con_number = [i for i in range(int(0.15*len(os.pathdir(dataset_dir+'0/'))))]
-        elif phase == 'train':
-            self.con_number = [i for i in range(int(0.15*len(os.pathdir(dataset_dir+'0/'))),len(os.pathdir(dataset_dir+'0/')))]
+        self.con_number = [i for i in range(len(os.listdir(dataset_dir+'0/')))]
+        
+        # if phase == 'test':
+        #     self.con_number = [i for i in range(int(0.15*len(os.listdir(dataset_dir+'0/'))))]
+        # elif phase == 'train':
+        #     self.con_number = [i for i in range(int(0.15*len(os.listdir(dataset_dir+'0/'))),len(os.listdir(dataset_dir+'0/')))]
 
 
     def __getitem__(self, index): # build pseudo-training pairs
@@ -148,11 +150,11 @@ class SMED_1D_lstm_landmark_pca(data.Dataset):
         self.num_frames = 16
         self.data_root = DATAROOT
         self.train = train
-        file = open(f'{LANDMARK_BASICS}train_M030.pkl', "rb")
+        file = open(f'{LANDMARK_BASICS}train_{ACTOR}.pkl', "rb")
         self.train_data = pickle.load(file)
         file.close()
 
-        file = open(f'{LANDMARK_BASICS}val_M030.pkl', "rb")
+        file = open(f'{LANDMARK_BASICS}val_{ACTOR}.pkl', "rb")
         self.test_data = pickle.load(file)
         file.close()
 

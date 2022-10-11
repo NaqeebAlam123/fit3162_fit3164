@@ -13,7 +13,8 @@ from dtw.dtw import dtw
 from numpy.linalg import norm
 
 import matplotlib.pyplot as plt
-import seaborn as sns
+from config import config
+from constants import AUDIO_DATASET as AUDIO_DATA, ALIGNED_AUDIO_DATA, EMOTION_LENGTH_OUTPUT
 
 sample_interval= 0.01
 window_len = 0.025
@@ -23,10 +24,7 @@ sample_len = 28
 
 MEAD = ['angry', 'contempt', 'disgusted', 'fear', 'happy', 'neutral',
         'sad', 'surprised']
-
-AUDIO_DATA = 'data/audio/M030_wav/'
-ALIGNED_AUDIO_DATA = 'data/aligned_audio/M030/'
-EMOTION_LENGTH_OUTPUT = 'data/emotion_length/M030/'
+ACTOR = config.actor
 
 
 # data process
@@ -71,28 +69,28 @@ line_10=['026','026','027','027','027','037','027','027']
 line_11=['027','027','028','028','028','038','028','028']
 line_12=['028','029','029','029','029','039','029','029']
 line_13=['029','030','030','030','030','040','030','030']
-line_M030=[]
-line_M030.append(line_1)
-line_M030.append(line_2)
-line_M030.append(line_3)
-line_M030.append(line_4)
-line_M030.append(line_5)
-line_M030.append(line_6)
-line_M030.append(line_7)
-line_M030.append(line_8)
-line_M030.append(line_9)
-line_M030.append(line_10)
-line_M030.append(line_11)
-line_M030.append(line_12)
-line_M030.append(line_13)
+lines=[]
+lines.append(line_1)
+lines.append(line_2)
+lines.append(line_3)
+lines.append(line_4)
+lines.append(line_5)
+lines.append(line_6)
+lines.append(line_7)
+lines.append(line_8)
+lines.append(line_9)
+lines.append(line_10)
+lines.append(line_11)
+lines.append(line_12)
+lines.append(line_13)
 
 
 for i in range(0,13):
-    m = line_M030[i]
+    m = lines[i]
     aligned_audio = f'{ALIGNED_AUDIO_DATA}{str(i)}'
     if not os.path.exists(aligned_audio):
         os.makedirs(aligned_audio)
-    for j in range(0,len(m)):
+    for j in range(0,8):
         audio_path = f'{AUDIO_DATA}{MEAD[j]}/{m[j]}.wav'
         if(j == 0):
             y1, sr1 = librosa.load(audio_path,sr=16000)
@@ -122,7 +120,7 @@ for i in range(0,13):
                 mfcc2_n[b[l]] = mfcc2[a[l]]
             with open(os.path.join(aligned_audio,str(j)+'.pkl'), 'wb') as f:
                 pickle.dump(mfcc2_n, f)
-        print(i,j)
+        # print(i,j)
 
 
 for i in range(8):

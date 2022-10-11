@@ -23,8 +23,7 @@ from collections import OrderedDict
 import python_speech_features
 from skimage import transform as tf
 from scipy.spatial import procrustes
-from constants import EMOTION_NET_DATASET_DIR, LM_ENCODER_DATASET_LANDMARK_DIR, LM_ENCODER_DATASET_MFCC_DIR, LANDMARK_BASICS
-
+from constants import EMOTION_NET_DATASET_DIR, LM_ENCODER_DATASET_LANDMARK_DIR, LM_ENCODER_DATASET_MFCC_DIR, LANDMARK_BASICS, ACTOR
 # import dlib
 # import cPickle as pickle
 import pickle
@@ -101,7 +100,7 @@ def parameter_reader(flist):
 #             print(allDir, n)
 
 #mfcc file split
-# p = Path('train/MFCC/M030/')
+# p = Path('train/MFCC/{ACTOR}/')
 mfcc_dataset = Path(EMOTION_NET_DATASET_DIR)
 
 for path in mfcc_dataset.iterdir():
@@ -112,9 +111,9 @@ for path in mfcc_dataset.iterdir():
     idx = 025
     '''
     if _emotion == 'neutral':
-        outpath = f'{LM_ENCODER_DATASET_MFCC_DIR}M030_neutral_1_{idx}/'
+        outpath = f'{LM_ENCODER_DATASET_MFCC_DIR}{ACTOR}_neutral_1_{idx}/'
     else:
-        outpath = f'{LM_ENCODER_DATASET_MFCC_DIR}M030_{_emotion}_3_{idx}/'
+        outpath = f'{LM_ENCODER_DATASET_MFCC_DIR}{ACTOR}_{_emotion}_3_{idx}/'
 
     os.makedirs(outpath, exist_ok=True)
     mfcc_all = []
@@ -130,7 +129,7 @@ for path in mfcc_dataset.iterdir():
 
 
 train_list, val_list = [], []
-# mfcc_dataset = Path('train/landmark/dataset_M030/mfcc/')
+# mfcc_dataset = Path('train/landmark/dataset_{ACTOR}/mfcc/')
 mfcc_dataset = Path(LM_ENCODER_DATASET_MFCC_DIR)
 for path in mfcc_dataset.iterdir():
     for mpath in path.iterdir():
@@ -141,9 +140,9 @@ for path in mfcc_dataset.iterdir():
         else:
             train_list.append(f'{path.name}/{mpath.name}')
 
-with open('data/landmark/landmark_68/M030/basics/train_M030.pkl', 'wb') as f:
+with open(f'data/landmark/landmark_68/{ACTOR}/basics/train_{ACTOR}.pkl', 'wb') as f:
     pickle.dump(train_list, f)
-with open('data/landmark/landmark_68/M030/basics/val_M030.pkl', 'wb') as f:
+with open(f'data/landmark/landmark_68/{ACTOR}/basics/val_{ACTOR}.pkl', 'wb') as f:
     pickle.dump(val_list, f)
 
 lm_all = []

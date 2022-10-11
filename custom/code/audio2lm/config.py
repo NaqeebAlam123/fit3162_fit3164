@@ -9,6 +9,9 @@ def parse_args():
                         default=False, action=argparse.BooleanOptionalAction)
     parser.add_argument("--landmark",
                         default=False, action=argparse.BooleanOptionalAction)
+    parser.add_argument("--actor",
+                        type=str,
+                        default='M030') ## NOTE M030
     parser.add_argument("--lr",
                         type=float,
                         default=0.0002)

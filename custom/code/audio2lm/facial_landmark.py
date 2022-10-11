@@ -79,7 +79,7 @@ def generate_landmarks_frame(image,face_detector,predictor):
 def facial_landmark(video_path,number_of_frames):
     face_detector=dlib.get_frontal_face_detector()
     
-    predictor = dlib.shape_predictor(r"../../../shape_predictor_68_face_landmarks.dat")
+    predictor = dlib.shape_predictor(r"../shape_predictor_68_face_landmarks.dat")
     # Loading image
     # #image=cv2.imread(path)
     # # Resizing the image and converting to gray scale to exclude any other faces in image

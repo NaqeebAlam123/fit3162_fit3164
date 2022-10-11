@@ -24,7 +24,6 @@ class Lm_encoder(nn.Module):
         ).to(DEVICE)
 
     def forward(self, example_landmark):
-        # print('lm_encoder', example_landmark.get_device())
         example_landmark_f = self.lmark_encoder(example_landmark)
         return example_landmark_f
 
@@ -49,7 +48,6 @@ class Ct_encoder(nn.Module):
         ).to(DEVICE)
 
     def forward(self, audio):
-        # print('ct_encoder', audio.get_device())
         feature = self.audio_encoder(audio.to(DEVICE))
         feature = feature.view(feature.size(0),-1)
         x = self.audio_encoder_fc(feature)
@@ -59,6 +57,7 @@ class Ct_encoder(nn.Module):
 class EmotionNet(nn.Module):
     def __init__(self):
         super(EmotionNet, self).__init__()
+        self.train_decoder = True
         self.emotion_encoder = nn.Sequential(
             conv2d(1,64,3,1,1),
             nn.MaxPool2d((1,3), stride=(1,2)), #[1, 64, 12, 12]
@@ -81,10 +80,13 @@ class EmotionNet(nn.Module):
         feature = self.emotion_encoder(mfcc.to(DEVICE))
         feature = feature.view(feature.size(0),-1)
         x = self.emotion_encoder_fc(feature)
-        if self.training:
-            # print('Emotion net is training', self.training)
+        if self.training and self.train_decoder:
             x = self.last_fc(x)
         return x
+    
+    def train(self, train_decoder=True):
+        self.train_decoder = train_decoder
+        return super().train(mode=True)
 
 
 class Ct_Decoder(nn.Module):
@@ -153,7 +155,6 @@ class AutoEncoder2x(nn.Module):
                                             +list(self.classify.parameters()), config.lr,betas=(config.beta1, config.beta2))
 
     def cross(self, x1, x2, x3, x4): # called in process()
-        self.emo_encoder.eval()
         c1 = self.con_encoder(x1.to(DEVICE))
         c2 = self.con_encoder(x4.to(DEVICE))
 
@@ -283,7 +284,7 @@ class AutoEncoder2x(nn.Module):
         self.classify.train()
         self.decoder.train()
         self.con_encoder.train()
-        self.emo_encoder.train()
+        self.emo_encoder.train(train_decoder=False)
 
         outputs, losses, acces = self.process(data)
 
@@ -352,18 +353,15 @@ class Decoder(nn.Module):
         ).to(DEVICE)
 
     def forward(self, lstm_input):
-        print(lstm_input.shape)
         hidden = ( torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256).to(DEVICE)),# torch.Size([3, 16, 256])
                       torch.autograd.Variable(torch.zeros(3, lstm_input.size(0), 256).to(DEVICE)))# torch.Size([3, 16, 256])
-        print(hidden[0].shape, hidden[1].shape)
+        # print(hidden[0].shape, hidden[1].shape)
 
         lstm_out, _ = self.lstm(lstm_input, hidden) #torch.Size([16, 16, 256])
-        print(lstm_out.shape)
         fc_out   = []
         for step_t in range(lstm_out.size(1)):
             fc_in = lstm_out[:,step_t,:]
             fc_out.append(self.lstm_fc(fc_in))
-            # print(step_t, fc_out[-1].shape)
         return torch.stack(fc_out, dim = 1)
 
 
@@ -379,9 +377,6 @@ class AT_emotion(nn.Module):
         self.CroEn_loss =  nn.CrossEntropyLoss()
         self.mse_loss_fn = nn.MSELoss()
         self.l1loss = nn.L1Loss()
-
-        # self.pca = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}U_68.npy')[:, :16])
-        # self.mean = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}mean_68.npy'))
 
         self.pca = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}U_68.npy')[:, :16]).to(DEVICE)
         self.mean = torch.FloatTensor(np.load(f'{LANDMARK_BASICS}mean_68.npy')).to(DEVICE)
@@ -433,7 +428,6 @@ class AT_emotion(nn.Module):
         return fake, loss_pca,10*loss_lm
 
     def forward(self, example_landmark, mfccs,emo_mfcc):
-        self.emo_encoder.eval()
         l = self.lm_encoder(example_landmark.to(DEVICE))
         lstm_input = []
 
@@ -500,7 +494,7 @@ class AT_emotion(nn.Module):
         self.lm_encoder.train()
         self.decoder.train()
         self.con_encoder.train()
-        self.emo_encoder.train()
+        self.emo_encoder.train(train_decoder=False)
 
         output, loss_pca, loss_lm = self.process(example_landmark, landmark, mfccs)
 

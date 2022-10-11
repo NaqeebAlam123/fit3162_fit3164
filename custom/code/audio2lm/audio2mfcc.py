@@ -4,10 +4,7 @@ import librosa
 import numpy as np
 import python_speech_features
 from pathlib import Path
-
-
-AUDIO_DATA = 'data/audio/M030_wav'
-MFCC_OUTPUT = 'data/mfcc/M030'
+from constants import AUDIO_DATASET as AUDIO_DATA, EMOTION_NET_DATASET_DIR as MFCC_OUTPUT
 
 
 def _audio2mfcc(audio_file, save):

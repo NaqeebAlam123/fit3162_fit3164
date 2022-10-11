@@ -91,7 +91,7 @@ def train_EmotionNet(config):
     print('load data end')
     
     #------- 3. Train the model-------#
-    writer = SummaryWriter(comment='M030')
+    writer = SummaryWriter(comment=config.actor)
     train_iter, val_iter = 0, 0
 
     training_start_time = time.time()
@@ -217,7 +217,7 @@ def train_AutoEncoder2x(config):
     print('end split')
 
     #------- 3. Train the model-------#
-    writer = SummaryWriter(comment='M030')
+    writer = SummaryWriter(comment=config.actor)
 
     total_steps, train_iter, val_iter = 0, 0, 0
     start_epoch = config.start_epoch
