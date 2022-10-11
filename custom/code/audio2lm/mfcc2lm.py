@@ -60,7 +60,24 @@ def _log_train_EmotionNet(epoch, iteration, len_train_loader, loss, training_sta
 def _log_val_EmotionNet(epoch, iteration, len_train_loader, loss, training_start_time):
     with open(EMOTION_NET_LOG_DIR + 'val.txt','a') as file_handle:
         file_handle.write(
-            f'[{epoch+1}, {iteration+1} / {len_train_loader}] train loss : {loss.item()} time spent: {time.time()-training_start_time} s\n')
+            f'[{epoch+1}, {iteration+1} / {len_train_loader}] val loss : {loss.item()} time spent: {time.time()-training_start_time} s\n')
+
+
+class EarlyStopping:
+    def __init__(self):
+        self.counter = 0
+        self.last_val_loss = np.inf
+
+    def early_stopping(self, val_loss):
+        if val_loss > self.last_val_loss:
+            self.counter += 1
+        else:
+            self.counter = 0
+        self.last_val_loss = self.val_loss
+        if self.counter >= config.patience:
+            return True
+        else:
+            return False
 
 
 # emotion_pretrain
@@ -95,6 +112,7 @@ def train_EmotionNet(config):
     train_iter, val_iter = 0, 0
 
     training_start_time = time.time()
+    es = EarlyStopping()
     for epoch in range(config.start_epoch, config.max_epochs):
         all_acc = 0.0
         for i, (data, label) in enumerate(train_loader):
@@ -115,7 +133,6 @@ def train_EmotionNet(config):
             all_acc += acc.item()
 
             if (train_iter % 1000 == 0):
-                # print('[%d,%5d / %d] train loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(train_loader), loss.item(),time.time()-training_start_time))
                 _log_train_EmotionNet(epoch=epoch, iteration=i, len_train_loader=len(train_loader), training_start_time=training_start_time, loss=loss)
 
         writer.add_scalar('Train_acc',float(all_acc)/(i+1),epoch+1)
@@ -142,9 +159,10 @@ def train_EmotionNet(config):
 
                 all_val_acc += val_acc.item()
                 if (val_iter % 1000 == 0):
-                    # print('[%d,%5d / %d] test loss :%.10f time spent: %f s' %(epoch + 1, i+1, len(val_loader), loss_t.item(),time.time()-training_start_time))
                     _log_val_EmotionNet(epoch=epoch, iteration=i, len_train_loader=len(val_loader), training_start_time=training_start_time, loss=loss_t)
         writer.add_scalar('Val_acc',float(all_val_acc)/(i+1), epoch+1)
+        if es.early_stopping(loss_t.items()):
+            break
     return
 
 
@@ -234,7 +252,7 @@ def train_AutoEncoder2x(config):
     #     print('load resume model')
 
     a = time.time()
-
+    es = EarlyStopping()
     for epoch in range(start_epoch, config.max_epochs):
         epoch_start_time = time.time()
         acc_1 = 0.0
@@ -323,6 +341,8 @@ def train_AutoEncoder2x(config):
                 val_iter += 1
                 writer.add_scalar('acc_1_v',float(acc_1_v)/ (i+1), epoch+1)
                 writer.add_scalar('acc_2_v',float(acc_2_v)/ (i+1), epoch+1)
+        if es.early_stopping(loss.items()):
+            break
     return
 
 

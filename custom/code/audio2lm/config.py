@@ -33,6 +33,7 @@ def parse_args():
     parser.add_argument("--cuda",
                         default=True)
     parser.add_argument('--device_ids', type=str, default='0')
+    parser.add_argument('--patience', type=int, default=10) # early stopping patience
 
     parser.add_argument('--num_thread', type=int, default=0)
     parser.add_argument('--weight_decay', type=float, default=4e-4)
