@@ -48,7 +48,7 @@ class DataLoad(unittest.TestCase) :
         assert mfcc.shape==torch.Size([1,28,12])
 
         # check if the label matches the requirement (it should be zero as angry is denoted by '0' in MEAD)
-        assert label==0
+        assert label==7
 
         # check if the __len__ method is returning the right size of train_data or not
         assert result.__len__()==len(result.train_data)
