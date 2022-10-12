@@ -22,7 +22,7 @@ class AudioTest(unittest.TestCase):
         # # The way most of the articles explained on how mfcc features is to have 20 ms window over the audio
         # # for each mfcc feature and that window is displaced by 10 ms each time.So ,the number of mfcc features that will be generated will be
         # # approximately equal to  (length of audio /10 ms)
-        path= f'test_sample/correct_audio/TEST/angry/001.wav'
+        path= f'{AUDIO_DATASET}/angry/001.wav'
         duration=librosa.get_duration(filename=path)
         expected_mfcc_features=(duration/0.01)
         save_path=f'{EMOTION_NET_DATASET_DIR}/generated_mfcc/angry_001'
@@ -37,14 +37,14 @@ class AudioTest(unittest.TestCase):
             assert os.path.exists(save_path+"\\"+str(i)+".npy")==True
 
         # checking with wrong audio file being supplied
-        path = f'test_sample/correct_audio/TEST/angry/010.wav'
+        path= f'{AUDIO_DATASET}/angry/200.wav'
         with self.assertRaises(PathNotFoundError) as ex:
             a2m_convert.audio_to_mfcc_representation(path, save_path,True)
         self.assertEqual(ex.exception.error_code,1)
 
     def test_audio2mfcc_main(self):
         # when the path being provided is not a directory but leads to a particular file
-        path='test_sample/correct_audio/TEST/angry'
+        path= f'{AUDIO_DATASET}/angry'
         save_path=f'{EMOTION_NET_DATASET_DIR}/generated_mfcc/'
         with self.assertRaises(PathNotFoundError) as ex:
             a2m_convert.main(path, save_path, True)
@@ -52,7 +52,7 @@ class AudioTest(unittest.TestCase):
         
 
         # when the audio in the path is of wrong format
-        path='test_sample/incorrect_audio/TEST'
+        path='fit3162_fit3164/custom/data/audio/M030'
         save_path=f'{EMOTION_NET_DATASET_DIR}/generated_mfcc/'
         with self.assertRaises(PathNotFoundError) as ex:
             a2m_convert.main(path, save_path, True)
@@ -60,12 +60,12 @@ class AudioTest(unittest.TestCase):
 
 
         # when all the parameters are of the right format
-        path='test_sample/correct_audio/TEST'
+        path= f'{AUDIO_DATASET}'
         save_path=f'{EMOTION_NET_DATASET_DIR}/generated_mfcc/'
         a2m_convert.main(path, save_path, True)
 
 
-         # check if the basic files and generated mfccs exist
+        # check if the basic files and generated mfccs exist
         assert os.path.exists(os.path.join(save_path, 'angry_001'))==True
         assert os.path.exists(f'{EMOTION_NET_DATASET_DIR}basics')==True
         mfcc_save_path=Path(os.path.join(save_path, 'angry_001'))
