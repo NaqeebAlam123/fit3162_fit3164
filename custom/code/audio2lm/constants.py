@@ -15,7 +15,7 @@ def create_dir(path):
     return path
 
 
-ACTOR = 'ACTOR_TEST'
+ACTOR = 'TESTACTOR'
 
 EMOTION_NET_DATASET_DIR = create_dir(f'fit3162_fit3164/custom/data/mfcc/{ACTOR}/')
 # EMOTION_NET_MODEL_DIR = create_dir(f'saved_models/EmotionNet/{ACTOR}/')
@@ -30,7 +30,7 @@ EMOTION_NET_DATASET_DIR = create_dir(f'fit3162_fit3164/custom/data/mfcc/{ACTOR}/
 
 
 LM_ENCODER_DATASET_LANDMARK_DIR = create_dir(f'fit3162_fit3164/custom/data/landmark/landmark_68/{ACTOR}/generated_landmarks/') ## NOTE: generated from facial_landmark.py
-# LM_ENCODER_DATASET_MFCC_DIR = create_dir(f'data/landmark/mfcc/{ACTOR}/') ## NOTE: generated from lm_pca.py
+LM_ENCODER_DATASET_MFCC_DIR = create_dir(f'fit3162_fit3164/custom/data/landmark/mfcc/{ACTOR}/') ## NOTE: generated from lm_pca.py
 # LM_ENCODER_MODEL_DIR = create_dir(f'saved_models/ATEmotion/{ACTOR}/')
 
 
