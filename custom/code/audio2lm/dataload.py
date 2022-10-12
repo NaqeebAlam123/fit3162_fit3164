@@ -11,15 +11,16 @@ from torch.nn.functional import pad
 import librosa
 import time
 import copy
-from constants import LANDMARK_BASICS, LM_ENCODER_DATASET_MFCC_DIR, LM_ENCODER_DATASET_LANDMARK_DIR, ACTOR
+from constants import LANDMARK_BASICS, LM_ENCODER_DATASET_MFCC_DIR, LM_ENCODER_DATASET_LANDMARK_DIR, ACTOR, EMOTION_NET_DATASET_DIR
+from Exception_classes import IndexOutOfBoundError
 
 DATAROOT = 'data/landmark/'
 
 
 MEAD = {'angry':0, 'contempt':1, 'disgusted':2, 'fear':3, 'happy':4, 'neutral':5,
         'sad':6, 'surprised':7}
-TRAIN_DIR = f'./train_{ACTOR}.pkl'
-VAL_DIR = f'./val_{ACTOR}.pkl'
+TRAIN_DIR = f'train_{ACTOR}.pkl'
+VAL_DIR = f'val_{ACTOR}.pkl'
 
 class SER_MFCC(data.Dataset):
     def __init__(self,
@@ -30,19 +31,21 @@ class SER_MFCC(data.Dataset):
       #  self.train_data = pickle.load(file)
       #  file.close()
 
-        self.data_path = dataset_dir
+        self.data_path = os.path.join(dataset_dir, 'generated_mfcc')
 
         self.train = train
         if(self.train=='train'):
-            file = open(TRAIN_DIR, "rb")
+            file = open(os.path.join(f'{EMOTION_NET_DATASET_DIR}basics',TRAIN_DIR), "rb")
             self.train_data = pickle.load(file)
             file.close()
         if(self.train=='val'):
-            file = open(VAL_DIR, "rb")
+            file = open(os.path.join(f'{EMOTION_NET_DATASET_DIR}basics',VAL_DIR), "rb")
             self.train_data = pickle.load(file)
             file.close()
 
     def __getitem__(self, index):
+        if index>=len(self.train_data) or index<0:
+            raise IndexOutOfBoundError
         emotion = self.train_data[index].split('_')[0]
         label = torch.Tensor([MEAD[emotion]])
 
