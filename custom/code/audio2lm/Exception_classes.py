@@ -1,3 +1,6 @@
+from tkinter import E
+
+
 class PathNotFoundError(Exception):
     def  __init__(self,path,message,error=0):
         self.path=path
@@ -16,3 +19,5 @@ class InvalidNumberofFrames(Exception):
     pass
 
 
+class IndexOutOfBoundError(Exception):
+    pass
