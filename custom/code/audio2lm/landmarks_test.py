@@ -4,6 +4,7 @@ from Exception_classes import *
 import dlib
 from unittest.mock import patch
 import extracting_facial_landmarks as f2
+import lm_pca as lm
 import numpy as np
 from constants import * 
 import os
@@ -64,9 +65,25 @@ class FacialLandmarks(unittest.TestCase) :
         #  to check the behaviour if the right path are passed and to ensure the files generated exist in their respective locations
         video_path=f'test_sample/correct_video'
         f2.extracting_facial_landmarks(video_path)
-        assert os.path.exists(f'{LM_ENCODER_DATASET_LANDMARK_DIR}/{ACTOR}_angry_3_001/0.npy')==True
-        assert os.path.exists(f'{LM_ENCODER_DATASET_LANDMARK_DIR}/{ACTOR}_angry_3_002/0.npy')==True
+        for i in range(11):
+            val=str(str(i+1).rjust(3, '0')) 
+            assert os.path.exists(f'{LM_ENCODER_DATASET_LANDMARK_DIR}/{ACTOR}_angry_3_{val}/0.npy')==True
             
+
+    def test_lm_pca(self):
+        # different inputs cannot be checked as no argument is being passed to the function
+        lm.lm_pca()        
+        # to check if the necessary basic files for TESTACTOR are generated
+        assert os.path.exists(f'{LANDMARK_BASICS}mean_68.npy')==True
+        assert os.path.exists(f'{LANDMARK_BASICS}U_68.npy')==True
+        assert os.path.exists(f'{LANDMARK_BASICS}val_{ACTOR}.pkl')==True
+        assert os.path.exists(f'{LANDMARK_BASICS}train_{ACTOR}.pkl')==True
+        
+        # to check if the necessary mfcc files for TESTACTOR are generated
+        for i in range(11):
+            val=str(str(i+1).rjust(3, '0')) 
+            assert os.path.exists(f'{LM_ENCODER_DATASET_MFCC_DIR}/{ACTOR}_angry_3_{val}/0.npy')==True    
+
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(FacialLandmarks)
