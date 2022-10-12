@@ -27,10 +27,9 @@ class FacialLandmarks(unittest.TestCase) :
             fl.extracting_frames(video_path, 25)
 
         # to check the behaviour of extracting_frames's if wrong number of the frames is provided 
-        video_path= f'test_sample/correct_video/angry/001.mp4'
+        video_path= f'fit3162_fit3164/custom/data/video/M011/angry/001.mp4'
         with self.assertRaises(InvalidNumberofFrames,msg="video does not have given the right number of frames"):
             fl.extracting_frames(video_path,100)
-        video_path= f'test_sample/correct_video/angry/001.mp4'
         assert len(fl.extracting_frames(video_path,25))==25
 
 
@@ -38,12 +37,12 @@ class FacialLandmarks(unittest.TestCase) :
         # to check if the landmark shape being generated from generate_landmarks_frame's method matches the requirement
         face_detector = dlib.get_frontal_face_detector()
         predictor = dlib.shape_predictor('fit3162_fit3164/shape_predictor_68_face_landmarks.dat')
-        video_path = f'test_sample/correct_video/angry/001.mp4'
+        video_path= f'fit3162_fit3164/custom/data/video/M011/angry/001.mp4'
         assert fl.generate_landmarks_frame(fl.extracting_frames(video_path,1)[0]     , face_detector,predictor).shape==(136,)
 
     def test_facial_landmark(self):
       # to check if the shape of series of landmarks generated from facial_landmark's method amtches the requirement (25,136) where 25 represents to the number of frames and 136 refers to the num of landmark points for each of them
-      video_path =  f'test_sample/correct_video/angry/001.mp4'
+      video_path= f'fit3162_fit3164/custom/data/video/M011/angry/001.mp4'
       with patch("facial_landmark.generate_landmarks_frame") as generate:
             generate.return_value=np.array(136 *[0])
             landmarks=fl.facial_landmark(video_path,25)
@@ -58,16 +57,15 @@ class FacialLandmarks(unittest.TestCase) :
             f2.extracting_facial_landmarks(video_path)
 
         # to check the behaviour if the wrong path name is passed to extracting_facial_landmarks' method
-        video_path= f'test_sample/furious'
+        video_path= f'fit3162_fit3164/custom/data/video/M011/furious'
         with self.assertRaises(PathNotFoundError, msg="Incorrect vieo path"):
             f2.extracting_facial_landmarks(video_path)
 
         #  to check the behaviour if the right path are passed and to ensure the files generated exist in their respective locations
-        video_path=f'test_sample/correct_video'
-        f2.extracting_facial_landmarks(video_path)
-        for i in range(11):
-            val=str(str(i+1).rjust(3, '0')) 
-            assert os.path.exists(f'{LM_ENCODER_DATASET_LANDMARK_DIR}/{ACTOR}_angry_3_{val}/0.npy')==True
+        video_path=f'fit3162_fit3164/custom/data/video/M011'
+        f2.extracting_facial_landmarks(video_path, True)
+        val='001'
+        assert os.path.exists(f'{LM_ENCODER_DATASET_LANDMARK_DIR}/{ACTOR}_angry_3_{val}/0.npy')==True
             
 
     def test_lm_pca(self):
@@ -79,10 +77,9 @@ class FacialLandmarks(unittest.TestCase) :
         assert os.path.exists(f'{LANDMARK_BASICS}val_{ACTOR}.pkl')==True
         assert os.path.exists(f'{LANDMARK_BASICS}train_{ACTOR}.pkl')==True
         
-        # to check if the necessary mfcc files for TESTACTOR are generated
-        for i in range(11):
-            val=str(str(i+1).rjust(3, '0')) 
-            assert os.path.exists(f'{LM_ENCODER_DATASET_MFCC_DIR}/{ACTOR}_angry_3_{val}/0.npy')==True    
+        # to check if the necessary mfcc for one of the file of M011 are generated
+        val='001'
+        assert os.path.exists(f'{LM_ENCODER_DATASET_MFCC_DIR}/{ACTOR}_angry_3_{val}/0.npy')==True    
 
 
 if __name__ == '__main__':
