@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import random
 import pickle
 import numpy as np
@@ -12,7 +13,7 @@ import librosa
 import time
 import copy
 from constants import LANDMARK_BASICS, LM_ENCODER_DATASET_MFCC_DIR, LM_ENCODER_DATASET_LANDMARK_DIR, ACTOR, EMOTION_NET_DATASET_DIR
-from Exception_classes import IndexOutOfBoundError
+from Exception_classes import IndexOutOfBoundError, PathNotFoundError
 
 DATAROOT = 'data/landmark/'
 
@@ -30,6 +31,8 @@ class SER_MFCC(data.Dataset):
       #  file = open('/media/asus/840C73C4A631CC36/MEAD/SER_new/list.pkl', "rb") #'rb'-read binary file
       #  self.train_data = pickle.load(file)
       #  file.close()
+        if not os.path.exists(dataset_dir):
+            raise PathNotFoundError(dataset_dir, "Invalid Path")
 
         self.data_path = os.path.join(dataset_dir, 'generated_mfcc')
 
@@ -64,6 +67,8 @@ class SER_MFCC(data.Dataset):
 
 class GET_MFCC(data.Dataset):
     def __init__(self, dataset_dir,phase):
+        if not os.path.exists(dataset_dir):
+            raise PathNotFoundError(dataset_dir, "Invalid Path")
         self.data_path = dataset_dir
         self.emo_number = sorted(list(MEAD.values()))
         self.con_number = [i for i in range(len(os.listdir(dataset_dir+'0/')))]
@@ -74,7 +79,7 @@ class GET_MFCC(data.Dataset):
         #     self.con_number = [i for i in range(int(0.15*len(os.listdir(dataset_dir+'0/'))),len(os.listdir(dataset_dir+'0/')))]
 
 
-    def __getitem__(self, index): # build pseudo-training pairs
+    def __getitem__(self): # build pseudo-training pairs
         #select name
         '''
         idx1, idx2,idx3, idx4 = np.random.choice(4,size=4)
@@ -149,7 +154,7 @@ class GET_MFCC(data.Dataset):
 
 
 class SMED_1D_lstm_landmark_pca(data.Dataset):
-    def __init__(self, dataset_dir,train = 'train'):
+    def __init__(self, train = 'train'):
         self.num_frames = 16
         self.data_root = DATAROOT
         self.train = train
@@ -166,6 +171,8 @@ class SMED_1D_lstm_landmark_pca(data.Dataset):
 
     def __getitem__(self, index):
         if self.train == 'train':
+            if index>len(self.train_data) or index<0:
+                raise IndexOutOfBoundError
             # ldmk loading
             data_folder = self.train_data[index]
             # print('data_folder', data_folder)
@@ -201,6 +208,8 @@ class SMED_1D_lstm_landmark_pca(data.Dataset):
             return example_landmark, example_mfcc, landmark, mfccs
 
         if self.train == 'test':
+            if index>len(self.test_data) or index<0:
+                raise IndexOutOfBoundError
             # ldmk loading
             data_folder = self.test_data[index]
             lmark_path = os.path.join(LM_ENCODER_DATASET_LANDMARK_DIR, data_folder)
