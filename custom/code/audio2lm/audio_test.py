@@ -21,7 +21,7 @@ class AudioTest(unittest.TestCase):
     def test__audio2mfcc(self):
         """
         purpose of testing:- 
-        to generate mfcc features for particular audio samples
+        it is to check that mfcc features generated for audio sample is present in the particular location and is within the bound 
 
         inputs:- 
         1. audio_file which represents the path where .wav format file needs to be taken from
@@ -60,7 +60,7 @@ class AudioTest(unittest.TestCase):
     def test_audio2mfcc_main(self):
         """
         purpose of testing:- 
-        to generate mfcc features for the whole directory
+        it is to ensure the generated mfcc features for the whole directory is located in the respective location
 
         inputs:- 
         1. AUDIO_DATA refers to the directory where the audio file in .wav format are placed
@@ -72,7 +72,6 @@ class AudioTest(unittest.TestCase):
         actual outputs observed:-
         all of the methods are doing their part according to the requirement as represented by the evidence provided in the docs
         """
-        
         # when the path being provided is not a directory but leads to a particular file
         path= f'{AUDIO_DATASET}/angry'
         save_path=f'{EMOTION_NET_DATASET_DIR}/generated_mfcc/'
@@ -107,10 +106,7 @@ class AudioTest(unittest.TestCase):
     def test_mfcc_dtw(self):
         """
         purpose of testing:- 
-        Dynamic Time Warping (DTW) algorithm is used to align MFCC 
-        vectors of pairs of audios with the same content but different emotions. 
-        These aligned audio samples can then be used as the inputs to the disentanglement network for cross-reconstruction.
-
+        to ensure the aligned audio and emotion length data from audio's '.wav' format is generated and stored in the respective locations
         inputs:- 
         No inputs required
 
