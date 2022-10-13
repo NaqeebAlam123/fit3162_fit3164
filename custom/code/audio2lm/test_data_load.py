@@ -16,6 +16,25 @@ class DataLoad(unittest.TestCase) :
         pass
 
     def test_SER_MFCC(self):
+        """
+        purpose of testing:- 
+        all the methods of SER_MFCC (which caters with returning testing and training dataset to the EmotioNet)'s all instance variables 
+        and return values have the correct data and is in the required shape (if applicable)
+        method of testing:- make use of python unittest framework and assert statements
+        
+        inputs:- 
+        1. path of mfcc features of the particular "ACTOR"  
+        2. train is either equivalent to "train" or "test" dependending if the EmotionNet is requiring dataset for training or validation
+        
+        expected outputs:- 
+        _init_ method should assign path of particular mfcc features to train_data
+        __getitem__ method should return the mfcc features along with the label (depicting the emotion) and if supplied 
+        with wrong index then raise exceptions
+        __len__ method should return the size of train_data
+        
+        actual outputs observed:-
+        all of the methods are doing their part according to the requirement as represented by the evidence provided in the docs
+        """
 
         # ensure PathNotFound error is raised and handled properly when invalid path is assigned to dataset_dir
         with self.assertRaises(PathNotFoundError,msg="path doesn't exist"):
@@ -55,7 +74,25 @@ class DataLoad(unittest.TestCase) :
         # check if the __len__ method is returning the right size of train_data or not
         assert result.__len__()==len(result.train_data)
 
+    
     def test_GET_MFCC(self):
+        """
+        purpose of testing:- 
+        all the methods of GET_MFCC (which caters with returning testing and training dataset to the AutoEncoder2x)'s 
+        all instance variables and return values have the correct data and is in the required shape (if applicable)
+
+        inputs:- 
+        1. path of emotion length of the particular "ACTOR"  
+        
+        expected outputs:- 
+        _init__ method should assign path of particular emotion length to data_path, MEAD values representing different emotion to emo_number, subfolder names to the con_number
+        __getitem__ is used for building the pseudo-training pairs 
+        __len__ method should return the total number of emotion length's subfolders
+        
+        actual outputs observed:-
+        all of the methods are doing their part according to the requirement as represented by the evidence provided in the docs
+        """
+
         #GET_MFCC('/result', 'train')
         # ensure PathNotFound error is raised and handled properly when invalid path is assigned to dataset_dir
         with self.assertRaises(PathNotFoundError,msg="path doesn't exist"):
@@ -68,7 +105,7 @@ class DataLoad(unittest.TestCase) :
         assert result.emo_number==[0,1,2,3,4,5,6,7]
         assert result.con_number==[i for i in range(len(os.listdir(AUTOENCODER_2X_DATASET_DIR+'0/')))]
         
-        dict_item=result.__getitem__()
+        dict_item=result.__getitem__(1)
        
         # ensure the inputs along with target values are returned
         assert len(dict_item)==10
@@ -85,9 +122,26 @@ class DataLoad(unittest.TestCase) :
         assert len(result.emo_number)*len(result.con_number)==result.__len__()
 
     def test_SMED_1D_lstm_landmark_pca(self):
+        """
+        purpose of testing:- 
+        all the methods of SMED_1D_lstm_landmark_pca (which caters with returning testing and training dataset to the AT_Emotion)'s 
+        all instance variables and return values have the correct data and is in the required shape (if applicable)
+
+        inputs:- 
+        1. path of emotion length of the particular "ACTOR"  
         
+        expected outputs:- 
+        _init_ method should assign content of train pkl basic folder of ACTOR to train_data, 
+        assign content of val pkl basic folder of ACTOR to test_data, 
+        assign content of U_68.npy of ACTOR to pca, assign content of mean_68.npy to mean
+        __getitem__ is used for returning the example landmarks and mfccs along with the landmarks and mfccs
+        __len__ method should return the length of required data (train or test)
+        
+        actual outputs observed:-
+        all of the methods are doing their part according to the requirement as represented by the evidence provided in the docs
+        """
         # creating an instance of SMED_1D_lstm_landmark_pca for training set
-        result=SMED_1D_lstm_landmark_pca("train")
+        result=SMED_1D_lstm_landmark_pca(LM_ENCODER_DATASET_LANDMARK_DIR, "train")
 
         # ensure out of bound error is raised and handled properly when bigger index value is assigned to index while calling __getitem__ method of SMED_1D_lstm_landmark_pca object
         with self.assertRaises(IndexOutOfBoundError,msg="index is out of bound"):
@@ -119,7 +173,7 @@ class DataLoad(unittest.TestCase) :
         self.assertEqual(result.__len__(),len(result.train_data))
         
         # creating an instance of SMED_1D_lstm_landmark_pca for testing set
-        result=SMED_1D_lstm_landmark_pca('test')
+        result=SMED_1D_lstm_landmark_pca(LM_ENCODER_DATASET_LANDMARK_DIR, 'test')
 
         # loading the test data
         file = open(f'{LANDMARK_BASICS}val_{ACTOR}.pkl', "rb")
