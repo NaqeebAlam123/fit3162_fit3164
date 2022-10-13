@@ -6,6 +6,7 @@ import io
 import numpy as np
 import os
 from Exception_classes import PathNotFoundError
+from mfcc_dtw import dtw_func 
 import pickle
 import re
 from constants import *
@@ -62,7 +63,7 @@ class AudioTest(unittest.TestCase):
         # when all the parameters are of the right format
         path= f'{AUDIO_DATASET}'
         save_path=f'{EMOTION_NET_DATASET_DIR}/generated_mfcc/'
-        a2m_convert.main(path, save_path, True)
+        #a2m_convert.main(path, save_path, True)   -> generated mfccs will be provided for this case for faster running but can be commented out and ran on its own too
 
 
         # check if the basic files and generated mfccs exist
@@ -74,6 +75,29 @@ class AudioTest(unittest.TestCase):
         assert len(list(basic_save_path.iterdir()))==2 # check if the two required basic files are generated
 
 
+    def test_mfcc_dtw(self):
+        # no input arguments are being provided so the existence of the new file and num of files being generated will be checked instead
+        #dtw_func() -> generated aligned data and emotion length output will be provied for this case for faster running but can be commented out and ran on its own too
+        assert os.path.exists(ALIGNED_AUDIO_DATA)==True
+        assert os.path.exists(EMOTION_LENGTH_OUTPUT)==True
+        aligned_audio_path=Path(ALIGNED_AUDIO_DATA)
+        emotion_length_output=Path(EMOTION_LENGTH_OUTPUT)
+        assert len(list(aligned_audio_path.iterdir()))==13
+        assert len(list(emotion_length_output.iterdir()))==8
+        
+        # loading the pkl file data for one of the random samples from emotion length and aligned audio
+        file = open(f'{EMOTION_LENGTH_OUTPUT}0/1.pkl', "rb")
+        emotion_length_data = pickle.load(file)
+        file.close()
+
+        file = open(f'{ALIGNED_AUDIO_DATA}0/1.pkl', "rb")
+        aligned_audio_data = pickle.load(file)
+        file.close()
+
+        # check if the pkl file data shape matches the requirement
+        assert emotion_length_data.shape==(28,13)
+        assert aligned_audio_data.shape==(324,13)
+    
 
 if __name__ == '__main__':
     suite = unittest.TestLoader().loadTestsFromTestCase(AudioTest)
