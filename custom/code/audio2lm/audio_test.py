@@ -19,7 +19,21 @@ class AudioTest(unittest.TestCase):
 
 
     def test__audio2mfcc(self):
+        """
+        purpose of testing:- 
+        to generate mfcc features for particular audio samples
+
+        inputs:- 
+        1. audio_file which represents the path where .wav format file needs to be taken from
+        2. save which represents the path where the generated mfcc need to be stored
         
+        expected outputs:- 
+        no returned value but the mfccs are generated from an audio and stored in the respective location. all of the exceptions are being handled properly.
+        
+        actual outputs observed:-
+        all of the methods are doing their part according to the requirement as represented by the evidence provided in the docs
+        """
+
         # # The way most of the articles explained on how mfcc features is to have 20 ms window over the audio
         # # for each mfcc feature and that window is displaced by 10 ms each time.So ,the number of mfcc features that will be generated will be
         # # approximately equal to  (length of audio /10 ms)
@@ -44,6 +58,21 @@ class AudioTest(unittest.TestCase):
         self.assertEqual(ex.exception.error_code,1)
 
     def test_audio2mfcc_main(self):
+        """
+        purpose of testing:- 
+        to generate mfcc features for the whole directory
+
+        inputs:- 
+        1. AUDIO_DATA refers to the directory where the audio file in .wav format are placed
+        2. MFCC_OUTPUT refers to the directory where the generated mfccs need to be stored
+        
+        expected outputs:- 
+        no returned value but all the generated mfcc for each of the audio sample is stored in the respective location
+
+        actual outputs observed:-
+        all of the methods are doing their part according to the requirement as represented by the evidence provided in the docs
+        """
+        
         # when the path being provided is not a directory but leads to a particular file
         path= f'{AUDIO_DATASET}/angry'
         save_path=f'{EMOTION_NET_DATASET_DIR}/generated_mfcc/'
@@ -76,6 +105,23 @@ class AudioTest(unittest.TestCase):
 
 
     def test_mfcc_dtw(self):
+        """
+        purpose of testing:- 
+        Dynamic Time Warping (DTW) algorithm is used to align MFCC 
+        vectors of pairs of audios with the same content but different emotions. 
+        These aligned audio samples can then be used as the inputs to the disentanglement network for cross-reconstruction.
+
+        inputs:- 
+        No inputs required
+
+        expected outputs:- 
+        aligned audio data and emotion length are generated and stored in the respective location
+
+        actual outputs observed:-
+        all of the methods are doing their part according to the requirement as represented by the evidence provided in the docs
+        """
+        
+        
         # no input arguments are being provided so the existence of the new file and num of files being generated will be checked instead
         #dtw_func() -> generated aligned data and emotion length output will be provied for this case for faster running but can be commented out and ran on its own too
         assert os.path.exists(ALIGNED_AUDIO_DATA)==True
