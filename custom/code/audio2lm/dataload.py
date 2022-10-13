@@ -79,7 +79,7 @@ class GET_MFCC(data.Dataset):
         #     self.con_number = [i for i in range(int(0.15*len(os.listdir(dataset_dir+'0/'))),len(os.listdir(dataset_dir+'0/')))]
 
 
-    def __getitem__(self): # build pseudo-training pairs
+    def __getitem__(self, index): # build pseudo-training pairs
         #select name
         '''
         idx1, idx2,idx3, idx4 = np.random.choice(4,size=4)
@@ -154,7 +154,7 @@ class GET_MFCC(data.Dataset):
 
 
 class SMED_1D_lstm_landmark_pca(data.Dataset):
-    def __init__(self, train = 'train'):
+    def __init__(self, dataset_dir, train = 'train'):
         self.num_frames = 16
         self.data_root = DATAROOT
         self.train = train
@@ -171,7 +171,7 @@ class SMED_1D_lstm_landmark_pca(data.Dataset):
 
     def __getitem__(self, index):
         if self.train == 'train':
-            if index>len(self.train_data) or index<0:
+            if index>=len(self.train_data) or index<0:
                 raise IndexOutOfBoundError
             # ldmk loading
             data_folder = self.train_data[index]
