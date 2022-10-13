@@ -351,8 +351,8 @@ def train_AT_Emotion(config):
 
     """ 1. load the data """
     print('start split')
-    train_set=SMED_1D_lstm_landmark_pca(LM_ENCODER_DATASET_LANDMARK_DIR,'train')
-    test_set=SMED_1D_lstm_landmark_pca(LM_ENCODER_DATASET_LANDMARK_DIR,'test')
+    train_set=SMED_1D_lstm_landmark_pca('train')
+    test_set=SMED_1D_lstm_landmark_pca('test')
     #train_set,test_set = train_test_split(dataset,test_size=0.2,random_state=1)
     train_loader = DataLoader(train_set,
                             batch_size=config.batch_size,
