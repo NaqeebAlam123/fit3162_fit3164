@@ -4,16 +4,22 @@ import torch
 import torch.utils
 from torch.autograd import Variable
 import librosa
-from models import AT_emotion
 import cv2
-from config import config
 #import scipy.misc
 #from tqdm import tqdm
 #import torchvision.transforms as transforms
 
 import python_speech_features
 import random
-from constants import LANDMARK_BASICS, LM_ENCODER_MODEL_DIR, AUDIO_DATASET, DEVICE
+
+# from fit3162_fit3164.custom.code.audio2lm.constants import LANDMARK_BASICS, LM_ENCODER_MODEL_DIR, AUDIO_DATASET, DEVICE
+# from fit3162_fit3164.custom.code.audio2lm.constants import *
+# from fit3162_fit3164.custom.code.audio2lm.config import config
+# from fit3162_fit3164.custom.code.audio2lm.models import AT_emotion
+
+from models import AT_emotion
+from config import config
+from constants import *
 
 LANDMARK_POINTS = 68
 FRAME_WIDTH, FRAME_HEIGHT = 256, 256
@@ -187,72 +193,77 @@ def process_mfcc(mfcc):
     processed_mfcc = torch.stack(processed_mfcc, dim=0)
     return processed_mfcc
 # surprised
-audio_file = f'{AUDIO_DATASET}neutral/001.wav' ## TODO
-emo_audio_file = f'{AUDIO_DATASET}surprised/001.wav' ## TODO
+# audio_file = f'{AUDIO_DATASET}neutral/001.wav' ## TODO
+# emo_audio_file = f'{AUDIO_DATASET}surprised/001.wav' ## TODO
 
-with torch.no_grad():
-    # load model
-    encoder = AT_emotion(config)
-    encoder.load_state_dict(torch.load(f'{LM_ENCODER_MODEL_DIR}atnet_emotion_99.pth'))
-    encoder.eval()
+def evaluate(audio_file, emo_audio_file):
+    with torch.no_grad():
+        # load model
+        encoder = AT_emotion(config)
+        encoder.load_state_dict(torch.load(f'{LM_E_NCODER_MODEL_DIR}atnet_emotion_99.pth', map_location=DEVICE))
+        encoder.eval()
 
-    # load landmark
-    pca = torch.FloatTensor(get_pca()[:,:16]).to(DEVICE)
-    mean = torch.FloatTensor(get_mean()).to(DEVICE)
+        # load landmark
+        pca = torch.FloatTensor(get_pca()[:,:16]).to(DEVICE)
+        mean = torch.FloatTensor(get_mean()).to(DEVICE)
 
-    landmark = get_mean()
-    landmark = landmark.reshape(LANDMARK_POINTS,2)  #150*2 
-    landmark =  landmark.reshape((1,landmark.shape[0]* landmark.shape[1])) #1.300
+        landmark = get_mean()
+        landmark = landmark.reshape(LANDMARK_POINTS,2)  #150*2 
+        landmark =  landmark.reshape((1,landmark.shape[0]* landmark.shape[1])) #1.300
 
-    landmark = Variable(torch.FloatTensor(landmark.astype(float)) ).to(DEVICE)
+        landmark = Variable(torch.FloatTensor(landmark.astype(float)) ).to(DEVICE)
 
-    landmark  = landmark - mean.expand_as(landmark)
-    landmark = torch.mm(landmark,  pca)
+        landmark  = landmark - mean.expand_as(landmark)
+        landmark = torch.mm(landmark,  pca)
 
-    # load audio mfcc
-    mfcc = load_speech_and_extract_feature(audio_file) ## NOTE
-    input_mfcc = process_mfcc(mfcc)
+        # load audio mfcc
+        mfcc = load_speech_and_extract_feature(audio_file) ## NOTE
+        input_mfcc = process_mfcc(mfcc)
 
-    # load emotion audio mfcc
-    mfcc_emo = load_speech_and_extract_feature(emo_audio_file) ## NOTE
-    emo_mfcc = process_mfcc(mfcc_emo)
-    print(emo_mfcc.shape, input_mfcc.shape)
-    
-    # trim for equal size
-    if(emo_mfcc.size(0) > input_mfcc.size(0)):
-        emo_mfcc = emo_mfcc[:input_mfcc.size(0),:,:]
-    if(emo_mfcc.size(0) < input_mfcc.size(0)):
-        n = input_mfcc.size(0) - emo_mfcc.size(0)
-        add = emo_mfcc[-1,:,:].unsqueeze(0)
-        for i in range(n):
-            emo_mfcc = torch.cat([emo_mfcc,add],0)
-    print(emo_mfcc.shape, input_mfcc.shape)
-    input_mfcc = input_mfcc.unsqueeze(0)
-    emo_mfcc = emo_mfcc.unsqueeze(0)
-    fake_lmark = encoder(landmark.to(DEVICE), input_mfcc.to(DEVICE), emo_mfcc.to(DEVICE))
-    fake_lmark = fake_lmark.view(fake_lmark.size(0)*fake_lmark.size(1) , 16)
+        # load emotion audio mfcc
+        mfcc_emo = load_speech_and_extract_feature(emo_audio_file) ## NOTE
+        emo_mfcc = process_mfcc(mfcc_emo)
+        print(emo_mfcc.shape, input_mfcc.shape)
+        
+        # trim for equal size
+        if(emo_mfcc.size(0) > input_mfcc.size(0)):
+            emo_mfcc = emo_mfcc[:input_mfcc.size(0),:,:]
+        if(emo_mfcc.size(0) < input_mfcc.size(0)):
+            n = input_mfcc.size(0) - emo_mfcc.size(0)
+            add = emo_mfcc[-1,:,:].unsqueeze(0)
+            for i in range(n):
+                emo_mfcc = torch.cat([emo_mfcc,add],0)
+        print(emo_mfcc.shape, input_mfcc.shape)
+        input_mfcc = input_mfcc.unsqueeze(0)
+        emo_mfcc = emo_mfcc.unsqueeze(0)
+        fake_lmark = encoder(landmark.to(DEVICE), input_mfcc.to(DEVICE), emo_mfcc.to(DEVICE))
+        fake_lmark = fake_lmark.view(fake_lmark.size(0)*fake_lmark.size(1) , 16)
 
-## TODO post process
-fake_lmark = fake_lmark + landmark.expand_as(fake_lmark)
-fake_lmark = torch.mm( fake_lmark, pca.t() )
-fake_lmark = fake_lmark + mean.expand_as(fake_lmark)
-fake_lmark = fake_lmark.unsqueeze(0)  
-fake_lmark = fake_lmark.data.cpu().numpy()
-fake_lmark = np.reshape(fake_lmark, (fake_lmark.shape[1], LANDMARK_POINTS,2))
-torch.save(fake_lmark, 'predicted_lmark.pt')
-# print(fake_lmark)
+    ## TODO post process
+    fake_lmark = fake_lmark + landmark.expand_as(fake_lmark)
+    fake_lmark = torch.mm( fake_lmark, pca.t() )
+    fake_lmark = fake_lmark + mean.expand_as(fake_lmark)
+    fake_lmark = fake_lmark.unsqueeze(0)  
+    fake_lmark = fake_lmark.data.cpu().numpy()
+    fake_lmark = np.reshape(fake_lmark, (fake_lmark.shape[1], LANDMARK_POINTS,2))
+    torch.save(fake_lmark, 'predicted_lmark.pt')
+    # print(fake_lmark)
 
-# clip = check_volume(speech,sr)
-# fake_lmark = change_mouth(fake_lmark, clip)
-# # np.save(config['sample_dir'], fake_lmark)
+    # clip = check_volume(speech,sr)
+    # fake_lmark = change_mouth(fake_lmark, clip)
+    # # np.save(config['sample_dir'], fake_lmark)
 
-# mouth_img = []
-# for i in range(len(fake_lmark)):
-#     mouth_img.append(draw_mouth(fake_lmark[i]*255, 256, 256))
-#     mouth_video_writer.write_frame(draw_mouth(fake_lmark[i]*255, 256, 256))
-# mouth_video_writer.end()
+    # mouth_img = []
+    # for i in range(len(fake_lmark)):
+    #     mouth_img.append(draw_mouth(fake_lmark[i]*255, 256, 256))
+    #     mouth_video_writer.write_frame(draw_mouth(fake_lmark[i]*255, 256, 256))
+    # mouth_video_writer.end()
 
-# add_audio(config['video_dir'], opt.audio)
+    # add_audio(config['video_dir'], opt.audio)
 
-# print ('The generated video is: {}'.format(config['video_dir'].replace('.mp4','.mov')))
+    # print ('The generated video is: {}'.format(config['video_dir'].replace('.mp4','.mov')))
 
+# audio_file = f'{AUDIO_DATASET}neutral/001.wav' ## TODO
+# emo_audio_file = f'{AUDIO_DATASET}surprised/001.wav' ## TODO
+
+# evaluate(audio_file, emo_audio_file)
