@@ -21,3 +21,7 @@ class InvalidNumberofFrames(Exception):
 
 class IndexOutOfBoundError(Exception):
     pass
+
+
+class OutOfBoundNumFiles(Exception):
+    pass
