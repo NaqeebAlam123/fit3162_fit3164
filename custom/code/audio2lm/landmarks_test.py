@@ -98,8 +98,7 @@ class FacialLandmarks(unittest.TestCase) :
         """
         purpose of testing:- 
         it is to check the generated landmarks from series of video are present in the respective location. 
-        in the testing below, only one of the video's generated landmarks are checked for faster running of the 
-        method
+        in the testing below, only one of the video's generated landmarks are checked for faster running
 
         inputs:- 
         1. video_path refers to the path of video whose series of frames need to be generated
@@ -132,7 +131,7 @@ class FacialLandmarks(unittest.TestCase) :
         """
         purpose of testing:- 
         it is to check the basic landmarks files are generated for the ACTOR and to also ensure the
-        landmark encoder's mfcc files are present
+         mfcc files are present
 
         inputs:- 
         no input required
