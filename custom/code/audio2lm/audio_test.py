@@ -106,7 +106,7 @@ class AudioTest(unittest.TestCase):
     def test_mfcc_dtw(self):
         """
         purpose of testing:- 
-        to ensure the aligned audio and emotion length data from audio's '.wav' format is generated and stored in the respective locations
+        to ensure the aligned audio and emotion length data from '.wav' format is generated and stored in the respective locations
         inputs:- 
         No inputs required
 
